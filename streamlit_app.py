@@ -685,6 +685,17 @@ elif selected == "IA táctica":
     recomendaciones tácticas y análisis en tiempo real. ¡Gracias por tu paciencia!
     """)
 
-# Pie de página
-st.markdown("---")
+from PIL import Image
+import streamlit as st
+
+# Pie de página con logo de StatsBomb
+st.markdown("---")  # línea separadora
+
+# Cargar logo
+logo = Image.open("assets/StatsBomb logo.png")  
+# Mostrar logo
+st.image(logo, width=150)  # ajusta el tamaño si quieres
+
+# Texto de crédito
 st.caption("Pedro Rafael Merlo Campos - TacticAI MVP 2025 | Datos: StatsBomb Open Data")
+
