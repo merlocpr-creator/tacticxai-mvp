@@ -1,1 +1,13 @@
 streamlit
+streamlit as st
+pandas as pd
+numpy as np
+matplotlib.pyplot as plt
+seaborn as sns
+from statsbombpy import sb
+from streamlit_option_menu import option_menu
+from streamlit_drawable_canvas import st_canvas
+from mplsoccer import Pitch
+from PIL import Image
+from io import BytesIO
+random
