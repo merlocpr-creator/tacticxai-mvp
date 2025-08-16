@@ -1,13 +1,10 @@
 streamlit
-streamlit as st
-pandas as pd
-numpy as np
-matplotlib.pyplot as plt
-seaborn as sns
-statsbombpy import sb
-streamlit_option_menu import option_menu
-streamlit_drawable_canvas import st_canvas
-mplsoccer import Pitch
-PIL import Image
-io import BytesIO
-random
+pandas
+numpy
+matplotlib
+seaborn
+statsbombpy
+streamlit-option-menu
+streamlit-drawable-canvas
+mplsoccer
+Pillow
