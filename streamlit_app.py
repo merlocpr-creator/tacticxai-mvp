@@ -19,7 +19,7 @@ from io import BytesIO
 import random
 import subprocess
 import sys
-import groqai
+import groq
 
 # =========================
 # CONFIGURACIÓN VISUAL
