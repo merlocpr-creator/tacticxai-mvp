@@ -680,7 +680,7 @@ elif selected == "Subir CSV":
         st.dataframe(df_csv.head())
         exportar_datos(df_csv, nombre_archivo="datos_subidos.csv")
 
-elif selected == "IA táctica":
+elif selected == "Chat TacticAI":
     st.header("TacticAI — Chat")
     
     import os
