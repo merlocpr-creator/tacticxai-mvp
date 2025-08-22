@@ -17,6 +17,13 @@ from mplsoccer import Pitch
 from PIL import Image
 from io import BytesIO
 import random
+import subprocess
+import sys
+
+try:
+    import groqai
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "groqai"])
 
 # =========================
 # CONFIGURACIÓN VISUAL
