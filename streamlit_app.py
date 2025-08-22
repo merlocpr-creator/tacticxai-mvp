@@ -681,75 +681,61 @@ elif selected == "Subir CSV":
         exportar_datos(df_csv, nombre_archivo="datos_subidos.csv")
 
 import streamlit as st
-from groq import Groq
+elif selected == "IA táctica":
+    st.header("IA Táctica — Chat")
 
-# ======================
-# CONFIGURACIÓN
-# ======================
-st.set_page_config(page_title="TacticxAI - Asistente Táctico", layout="wide")
+    import os
+    from groq import Groq, AuthenticationError, BadRequestError, APIConnectionError, RateLimitError
 
-# Inicializar cliente Groq
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+    # Inicializa historial para Groq (incluye un mensaje system persistente)
+    if "messages_groq" not in st.session_state:
+        st.session_state.messages_groq = [
+            {"role": "system", "content": "Eres un asistente experto en táctica de fútbol. Responde en español con consejos aplicables y breves bullets cuando convenga."}
+        ]
 
-# ======================
-# FUNCIÓN DE FILTRO
-# ======================
-def es_pregunta_futbol(pregunta: str) -> bool:
-    """Verifica si la pregunta está relacionada con fútbol/tácticas."""
-    keywords = [
-        "fútbol", "soccer", "balón", "jugador", "equipo", "alineación", "parado táctico",
-        "táctica", "estrategia", "formación", "defensa", "delantero", "mediocampo",
-        "entrenador", "director técnico", "partido", "cancha", "gol"
-    ]
-    return any(kw.lower() in pregunta.lower() for kw in keywords)
+    # Renderiza historial en formato chat (sin mostrar el system)
+    for m in st.session_state.messages_groq:
+        if m["role"] in ("user", "assistant"):
+            with st.chat_message("user" if m["role"] == "user" else "assistant"):
+                st.markdown(m["content"])
 
-# ======================
-# INTERFAZ DE CHAT
-# ======================
-st.title("TacticxAI - Asistente Táctico de Fútbol")
+    # Entrada tipo chat (estilo ChatGPT)
+    prompt = st.chat_input("Escribe tu pregunta táctica (p. ej., ¿Cómo defender un 4-3-3?)")
 
-# Guardar historial en session_state
-if "messages" not in st.session_state:
-    st.session_state["messages"] = []
+    if prompt:
+        # Muestra el mensaje del usuario en el chat e insértalo al historial
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        st.session_state.messages_groq.append({"role": "user", "content": prompt})
 
-# Mostrar historial en formato tipo chat
-for msg in st.session_state["messages"]:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-# Campo de entrada del usuario
-if prompt := st.chat_input("Hazme una pregunta sobre táctica de fútbol..."):
-    # Guardar mensaje del usuario
-    st.session_state["messages"].append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # Verificar si la pregunta es de fútbol
-    if es_pregunta_futbol(prompt):
-        # Respuesta de la IA usando Groq
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
+        # Cliente Groq
+        api_key = os.getenv("GROQ_API_KEY") or getattr(st.secrets, "GROQ_API_KEY", None)
+        if not api_key:
+            with st.chat_message("assistant"):
+                st.error("Falta GROQ_API_KEY en tus Secrets o variables de entorno.")
+        else:
+            client = Groq(api_key=api_key)
             try:
-                response = client.chat.completions.create(
-                    model="llama-3.1-13b-hf",  # modelo actualizado
-                    messages=[
-                        {"role": "system", "content": "Eres un asistente experto en táctica de fútbol. Responde únicamente sobre formaciones, alineaciones, estrategias y parado táctico."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.7,
-                    max_tokens=512,
+                # 👇 Modelo correcto y estable
+                resp = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=st.session_state.messages_groq,
+                    temperature=0.2,
                 )
-                reply = response.choices[0].message.content
+                answer = resp.choices[0].message.content
+
+                # Muestra respuesta y guarda en historial
+                with st.chat_message("assistant"):
+                    st.markdown(answer)
+                st.session_state.messages_groq.append({"role": "assistant", "content": answer})
+
+            except (AuthenticationError, RateLimitError, APIConnectionError, BadRequestError) as e:
+                with st.chat_message("assistant"):
+                    st.error(f"Error de Groq: {e}")
             except Exception as e:
-                reply = f" Error al generar respuesta: {e}"
-            message_placeholder.markdown(reply)
-            st.session_state["messages"].append({"role": "assistant", "content": reply})
-    else:
-        # Mensaje cuando no es de fútbol
-        reply = "Esta IA está diseñada para resolver cuestionamientos de parado táctico. Si tiene alguna otra duda con respecto a tácticas de fútbol, estaré encantado de ayudarte."
-        with st.chat_message("assistant"):
-            st.markdown(reply)
-        st.session_state["messages"].append({"role": "assistant", "content": reply})
+                with st.chat_message("assistant"):
+                    st.error(f"Error inesperado: {e}")
+
 
 
 
