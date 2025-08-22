@@ -17,6 +17,10 @@ from mplsoccer import Pitch
 from PIL import Image
 from io import BytesIO
 import random
+import os
+from groqai import GroqClient
+
+client = GroqClient(api_key=os.getenv("GROQ_API_KEY"))
 
 # =========================
 # CONFIGURACIÓN VISUAL
