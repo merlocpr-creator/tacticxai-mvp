@@ -678,12 +678,26 @@ elif selected == "Subir CSV":
         exportar_datos(df_csv, nombre_archivo="datos_subidos.csv")
 
 elif selected == "IA táctica":
-    # SECCIÓN RESPETADA TAL CUAL (no se modifica el texto)
-    st.header("IA Táctica - Función en desarrollo")
-    st.info("""
-    Esta sección está en desarrollo y pronto estará disponible con funcionalidades avanzadas de inteligencia artificial para 
-    recomendaciones tácticas y análisis en tiempo real. ¡Gracias por tu paciencia!
-    """)
+    st.header("IA Táctica - Demo con Chat IA")
+
+    user_input = st.text_input("Escribe tu pregunta táctica (ejemplo: ¿Cómo defender un 4-3-3?)")
+
+    if user_input:
+        from openai import OpenAI
+        import os
+
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Eres un asistente experto en táctica de fútbol."},
+                {"role": "user", "content": user_input}
+            ]
+        )
+
+        st.success(response.choices[0].message.content)
+
 
 from PIL import Image
 import streamlit as st
