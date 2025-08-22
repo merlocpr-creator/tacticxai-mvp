@@ -681,7 +681,7 @@ elif selected == "Subir CSV":
         exportar_datos(df_csv, nombre_archivo="datos_subidos.csv")
 
 elif selected == "IA táctica":
-    st.header("IA Táctica — Chat")
+    st.header("TacticAI — Chat")
     
     import os
     from groq import Groq, AuthenticationError, BadRequestError, APIConnectionError, RateLimitError
