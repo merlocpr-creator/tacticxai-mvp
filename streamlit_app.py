@@ -687,7 +687,7 @@ elif selected == "IA táctica":
 
     if user_input:
         import os
-        from groqai import GroqClient
+        from groq import GroqClient
 
         client = GroqClient(api_key=os.getenv("GROQ_API_KEY"))
 
