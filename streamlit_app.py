@@ -683,18 +683,21 @@ elif selected == "IA táctica":
     user_input = st.text_input("Escribe tu pregunta táctica (ejemplo: ¿Cómo defender un 4-3-3?)")
 
     if user_input:
-        from openai import OpenAI
         import os
+        from groqai import GroqClient
 
-        client = OpenAI(api_key=os.getenv("GROQ_API_KEY"))
+        client = GroqClient(api_key=os.getenv("GROQ_API_KEY"))
 
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
+        # Enviar prompt al chatbot Groq
+        response = client.chat(
             messages=[
                 {"role": "system", "content": "Eres un asistente experto en táctica de fútbol."},
                 {"role": "user", "content": user_input}
             ]
         )
+
+        st.success(response.text)
+
 
         st.success(response.choices[0].message.content)
 
