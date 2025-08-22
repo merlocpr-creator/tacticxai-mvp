@@ -19,11 +19,7 @@ from io import BytesIO
 import random
 import subprocess
 import sys
-
-try:
-    import groqai
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "groqai"])
+import groqai
 
 # =========================
 # CONFIGURACIÓN VISUAL
