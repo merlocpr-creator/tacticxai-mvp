@@ -9,5 +9,4 @@ streamlit-drawable-canvas
 mplsoccer
 Pillow
 openai
-groqai
-
+# groqai
