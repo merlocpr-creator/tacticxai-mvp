@@ -687,22 +687,20 @@ elif selected == "IA táctica":
 
     if user_input:
         import os
-        from groq import Groq  # ✅ se importa Groq, no GroqClient
+        from groq import Groq
 
-        # Crear cliente
         client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-        # Enviar prompt al chatbot Groq
         response = client.chat.completions.create(
-            model="llama-3.1-70b-versatile",  # 👈 puedes cambiar a otro modelo de Groq
+            model="llama-3.1-70b-versatile",
             messages=[
                 {"role": "system", "content": "Eres un asistente experto en táctica de fútbol."},
                 {"role": "user", "content": user_input}
             ]
         )
 
-        # Mostrar respuesta
         st.success(response.choices[0].message.content)
+
 
 
 from PIL import Image
