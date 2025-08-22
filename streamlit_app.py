@@ -683,56 +683,57 @@ elif selected == "Subir CSV":
 elif selected == "IA táctica":
     st.header("IA Táctica")
 
-    # Inicializar historial de chat
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+    import os
+    from groq import Groq, AuthenticationError, BadRequestError, APIConnectionError, RateLimitError
 
-    # Input del usuario
-    user_input = st.text_input("Escribe tu pregunta táctica (ejemplo: ¿Cómo defender un 4-3-3?)")
+    # Inicializa historial para Groq (incluye un mensaje system persistente)
+    if "messages_groq" not in st.session_state:
+        st.session_state.messages_groq = [
+            {"role": "system", "content": "Eres un asistente experto en táctica de fútbol. Responde en español con consejos aplicables y breves bullets cuando convenga."}
+        ]
 
-    if user_input:
-        import os
-        from groq import Groq
+    # Renderiza historial en formato chat (sin mostrar el system)
+    for m in st.session_state.messages_groq:
+        if m["role"] in ("user", "assistant"):
+            with st.chat_message("user" if m["role"] == "user" else "assistant"):
+                st.markdown(m["content"])
 
-        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+    # Entrada tipo chat (estilo ChatGPT)
+    prompt = st.chat_input("Escribe tu pregunta táctica (p. ej., ¿Cómo defender un 4-3-3?)")
 
-        # Llamada al modelo
-        response = client.chat.completions.create(
-            model="llama-3.1-70b-versatile",
-            messages=[
-                {"role": "system", "content": "Eres un asistente experto en táctica de fútbol."},
-                {"role": "user", "content": user_input}
-            ]
-        )
+    if prompt:
+        # Muestra el mensaje del usuario en el chat e insértalo al historial
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        st.session_state.messages_groq.append({"role": "user", "content": prompt})
 
-        bot_reply = response.choices[0].message.content
-
-        # Guardar en historial
-        st.session_state.chat_history.append(("user", user_input))
-        st.session_state.chat_history.append(("bot", bot_reply))
-
-    # Mostrar historial tipo chat
-    for role, msg in st.session_state.chat_history:
-        if role == "user":
-            st.markdown(
-                f"""
-                <div style='text-align: right; background-color: #DCF8C6; padding: 10px; 
-                border-radius: 10px; margin: 5px 0; max-width: 70%; float: right; clear: both;'>
-                     <b>Tú:</b> {msg}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        # Cliente Groq
+        api_key = os.getenv("GROQ_API_KEY") or getattr(st.secrets, "GROQ_API_KEY", None)
+        if not api_key:
+            with st.chat_message("assistant"):
+                st.error("Falta GROQ_API_KEY en tus Secrets o variables de entorno.")
         else:
-            st.markdown(
-                f"""
-                <div style='text-align: left; background-color: #F1F0F0; padding: 10px; 
-                border-radius: 10px; margin: 5px 0; max-width: 70%; float: left; clear: both;'>
-                     <b>IA Táctica:</b> {msg}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            client = Groq(api_key=api_key)
+            try:
+                # 👇 Modelo correcto y estable
+                resp = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=st.session_state.messages_groq,
+                    temperature=0.2,
+                )
+                answer = resp.choices[0].message.content
+
+                # Muestra respuesta y guarda en historial
+                with st.chat_message("assistant"):
+                    st.markdown(answer)
+                st.session_state.messages_groq.append({"role": "assistant", "content": answer})
+
+            except (AuthenticationError, RateLimitError, APIConnectionError, BadRequestError) as e:
+                with st.chat_message("assistant"):
+                    st.error(f"Error de Groq: {e}")
+            except Exception as e:
+                with st.chat_message("assistant"):
+                    st.error(f"Error inesperado: {e}")
 
 
 
