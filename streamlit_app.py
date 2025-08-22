@@ -681,34 +681,58 @@ elif selected == "Subir CSV":
         exportar_datos(df_csv, nombre_archivo="datos_subidos.csv")
 
 elif selected == "IA táctica":
-    st.header("IA Táctica - Demo con Chat IA")
+    st.header("IA Táctica")
 
+    # Inicializar historial de chat
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = []
+
+    # Input del usuario
     user_input = st.text_input("Escribe tu pregunta táctica (ejemplo: ¿Cómo defender un 4-3-3?)")
 
     if user_input:
         import os
-        from groq import Groq, BadRequestError, AuthenticationError, APIConnectionError, RateLimitError
+        from groq import Groq
 
-        # Lee la API key desde variable de entorno o desde Streamlit Secrets
-        api_key = os.getenv("GROQ_API_KEY") or getattr(st.secrets, "GROQ_API_KEY", None)
-        if not api_key:
-            st.error("Falta GROQ_API_KEY. Defínela en los Secrets de Streamlit o como variable de entorno.")
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+        # Llamada al modelo
+        response = client.chat.completions.create(
+            model="llama-3.1-70b-versatile",
+            messages=[
+                {"role": "system", "content": "Eres un asistente experto en táctica de fútbol."},
+                {"role": "user", "content": user_input}
+            ]
+        )
+
+        bot_reply = response.choices[0].message.content
+
+        # Guardar en historial
+        st.session_state.chat_history.append(("user", user_input))
+        st.session_state.chat_history.append(("bot", bot_reply))
+
+    # Mostrar historial tipo chat
+    for role, msg in st.session_state.chat_history:
+        if role == "user":
+            st.markdown(
+                f"""
+                <div style='text-align: right; background-color: #DCF8C6; padding: 10px; 
+                border-radius: 10px; margin: 5px 0; max-width: 70%; float: right; clear: both;'>
+                     <b>Tú:</b> {msg}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
         else:
-            client = Groq(api_key=api_key)
-            try:
-                resp = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[
-                        {"role": "system", "content": "Eres un asistente experto en táctica de fútbol."},
-                        {"role": "user", "content": user_input},
-                    ],
-                    temperature=0.2,
-                )
-                st.success(resp.choices[0].message.content)
-            except (AuthenticationError, RateLimitError, APIConnectionError, BadRequestError) as e:
-                st.error(f"Error de Groq: {e}")
-            except Exception as e:
-                st.error(f"Error inesperado: {e}")
+            st.markdown(
+                f"""
+                <div style='text-align: left; background-color: #F1F0F0; padding: 10px; 
+                border-radius: 10px; margin: 5px 0; max-width: 70%; float: left; clear: both;'>
+                     <b>IA Táctica:</b> {msg}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
 
 
