@@ -24,7 +24,7 @@ import groq
 # =========================
 # CONFIGURACIÓN VISUAL
 # =========================
-st.set_page_config(page_title="TacticAI Pro", layout="wide")
+st.set_page_config(page_title="TacticAI", layout="wide")
 st.markdown("""
     <style>
     .block-container { padding: 1rem 2rem; }
@@ -385,7 +385,7 @@ ligas = comps['competition_name'].unique().tolist() if not comps.empty else ["(N
 with st.sidebar:
     selected = option_menu(
         menu_title="TacticAI Pro",
-        options=["Inicio", "Análisis Rival", "Análisis Propio", "Mapa de Calor", "Pizarra", "Comparativa", "Simulador", "Subir CSV", "IA táctica"],
+        options=["Inicio", "Análisis Rival", "Análisis Propio", "Mapa de Calor", "Pizarra", "Comparativa", "Simulador", "Subir CSV", "Chat TacticAI"],
         icons=["house", "trophy", "shield", "fire", "pencil", "graph-up", "play", "upload", "robot"],
         default_index=0,
     )
@@ -437,9 +437,9 @@ with col3:
 # SECCIONES DEL DASHBOARD
 # =========================
 if selected == "Inicio":
-    st.markdown("<h2 style='margin-top: 20px;'>Bienvenido a TacticAI Pro</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='margin-top: 20px;'>Bienvenido a TacticAI</h2>", unsafe_allow_html=True)
     st.markdown("""
-    <div style='font-size:16px; line-height:1.6; text-align: justify; padding: 10px 15px; background-color: #1A1A1A; border-radius: 8px;'>
+    <div style='font-size:16px; line-height:1.6; text-align: justify; padding: 10px 15px; border-radius: 8px;'>
     <strong>TacticAI</strong> es una herramienta innovadora que va a revolucionar la forma en que los equipos de fútbol toman decisiones tácticas. 
     El MVP actual integra datos históricos de más de <strong>20 ligas a nivel mundial</strong>, desde la Premier League hasta la Copa América, 
     y permite a los entrenadores comparar rendimientos, analizar rivales y obtener sugerencias tácticas personalizadas.
