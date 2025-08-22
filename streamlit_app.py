@@ -687,19 +687,28 @@ elif selected == "IA táctica":
 
     if user_input:
         import os
-        from groq import Groq
+        from groq import Groq, BadRequestError, AuthenticationError, APIConnectionError, RateLimitError
 
-        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-        response = client.chat.completions.create(
-            model="llama-3.1-70b-versatile",
-            messages=[
-                {"role": "system", "content": "Eres un asistente experto en táctica de fútbol."},
-                {"role": "user", "content": user_input}
-            ]
-        )
-
-        st.success(response.choices[0].message.content)
+        # Lee la API key desde variable de entorno o desde Streamlit Secrets
+        api_key = os.getenv("GROQ_API_KEY") or getattr(st.secrets, "GROQ_API_KEY", None)
+        if not api_key:
+            st.error("Falta GROQ_API_KEY. Defínela en los Secrets de Streamlit o como variable de entorno.")
+        else:
+            client = Groq(api_key=api_key)
+            try:
+                resp = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": "Eres un asistente experto en táctica de fútbol."},
+                        {"role": "user", "content": user_input},
+                    ],
+                    temperature=0.2,
+                )
+                st.success(resp.choices[0].message.content)
+            except (AuthenticationError, RateLimitError, APIConnectionError, BadRequestError) as e:
+                st.error(f"Error de Groq: {e}")
+            except Exception as e:
+                st.error(f"Error inesperado: {e}")
 
 
 
