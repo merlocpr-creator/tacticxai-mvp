@@ -686,7 +686,7 @@ elif selected == "IA táctica":
         from openai import OpenAI
         import os
 
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        client = OpenAI(api_key=os.getenv("GROQ_API_KEY"))
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
