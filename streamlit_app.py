@@ -731,7 +731,7 @@ if prompt := st.chat_input("Hazme una pregunta sobre táctica de fútbol..."):
             message_placeholder = st.empty()
             try:
                 response = client.chat.completions.create(
-                    model="llama-3.1-70b-versatile",
+                    model="llama-3.1-13b-hf",  # modelo actualizado
                     messages=[
                         {"role": "system", "content": "Eres un asistente experto en táctica de fútbol. Responde únicamente sobre formaciones, alineaciones, estrategias y parado táctico."},
                         {"role": "user", "content": prompt}
