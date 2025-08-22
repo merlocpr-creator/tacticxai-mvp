@@ -689,7 +689,8 @@ elif selected == "Chat TacticAI":
     # Inicializa historial para Groq (incluye un mensaje system persistente)
     if "messages_groq" not in st.session_state:
         st.session_state.messages_groq = [
-            {"role": "system", "content": "Eres un asistente experto en táctica de fútbol. Tu apodo será DT. Responde en español con consejos aplicables y breves bullets cuando convenga, si te preguntan temas no relacionados a tactica de futbol, muestra error"}
+            {"role": "system", "content": "Eres un asistente experto en táctica de fútbol llamado DT. Tu misión es ayudar a entrenadores y analistas a tomar decisiones tácticas. Siempre responde en el idioma que te pregunten, con claridad y breves bullets cuando convenga. Solo proporciona información relacionada con tácticas, alineaciones, análisis de rivales, estrategias de juego o rendimiento de jugadores. Si te preguntan sobre temas no relacionados con fútbol, responde de manera cortés indicando que solo puedes ayudar en tácticas de fútbol.
+"}
         ]
 
     # Renderiza historial en formato chat (sin mostrar el system)
