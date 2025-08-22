@@ -680,10 +680,9 @@ elif selected == "Subir CSV":
         st.dataframe(df_csv.head())
         exportar_datos(df_csv, nombre_archivo="datos_subidos.csv")
 
-import streamlit as st
 elif selected == "IA táctica":
     st.header("IA Táctica — Chat")
-
+    
     import os
     from groq import Groq, AuthenticationError, BadRequestError, APIConnectionError, RateLimitError
 
