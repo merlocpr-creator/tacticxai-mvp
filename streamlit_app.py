@@ -24,7 +24,7 @@ import groq
 # =========================
 # CONFIGURACIÓN VISUAL
 # =========================
-st.set_page_config(page_title="TacticAI", layout="wide")
+st.set_page_config(page_title="TactiAI", layout="wide")
 st.markdown("""
     <style>
     .block-container { padding: 1rem 2rem; }
