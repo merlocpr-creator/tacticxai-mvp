@@ -24,7 +24,7 @@ import groq
 # =========================
 # CONFIGURACIÓN VISUAL
 # =========================
-st.set_page_config(page_title="TactiAI", layout="wide")
+st.set_page_config(page_title="TacticAI", layout="wide")
 st.markdown("""
     <style>
     .block-container { padding: 1rem 2rem; }
@@ -384,13 +384,13 @@ ligas = comps['competition_name'].unique().tolist() if not comps.empty else ["(N
 # Menú lateral con nueva sección IA táctica (se respeta tal cual)
 with st.sidebar:
     selected = option_menu(
-        menu_title="TacticAI Pro",
+        menu_title="TacticAI",
         options=["Inicio", "Análisis Rival", "Análisis Propio", "Mapa de Calor", "Pizarra", "Comparativa", "Simulador", "Subir CSV", "Chat TacticAI"],
         icons=["house", "trophy", "shield", "fire", "pencil", "graph-up", "play", "upload", "robot"],
         default_index=0,
     )
 
-st.markdown("<h1>TacticAI Pro</h1>", unsafe_allow_html=True)
+st.markdown("<h1>TacticAI1</h1>", unsafe_allow_html=True)
 
 # Selección liga y equipos
 col1, col2, col3 = st.columns([1,1,1])
