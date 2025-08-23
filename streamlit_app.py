@@ -390,7 +390,11 @@ with st.sidebar:
         default_index=0,
     )
 
-st.markdown("<h1>TacticAI1</h1>", unsafe_allow_html=True)
+st.markdown("<h1>TacticAI</h1>", unsafe_allow_html=True)
+# Cargar logo
+logo = Image.open("assets/Tactic AI_logo.png")  
+# Mostrar logo
+st.image(logo, width=150)  # ajusta el tamaño si quieres
 
 # Selección liga y equipos
 col1, col2, col3 = st.columns([1,1,1])
