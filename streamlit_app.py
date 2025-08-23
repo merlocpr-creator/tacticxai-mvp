@@ -20,6 +20,9 @@ import random
 import subprocess
 import sys
 import groq
+import streamlit as st
+from PIL import Image
+from streamlit_option_menu import option_menu
 
 # =========================
 # CONFIGURACIÓN VISUAL
@@ -381,6 +384,9 @@ comps = cargar_competiciones()
 # Lista ligas disponibles
 ligas = comps['competition_name'].unique().tolist() if not comps.empty else ["(No disponible)"]
 
+# Cargar logo
+    logo = Image.open("assets/Tactic AI_logo.png")
+    st.image(logo, width=180)  # Logo arriba del menú
 # Menú lateral con nueva sección IA táctica (se respeta tal cual)
 with st.sidebar:
     selected = option_menu(
@@ -389,12 +395,6 @@ with st.sidebar:
         icons=["house", "trophy", "shield", "fire", "pencil", "graph-up", "play", "upload", "robot"],
         default_index=0,
     )
-
-st.markdown("<h1>TacticAI</h1>", unsafe_allow_html=True)
-# Cargar logo
-logo = Image.open("assets/Tactic AI_logo.png")  
-# Mostrar logo
-st.image(logo, width=150)  # ajusta el tamaño si quieres
 
 # Selección liga y equipos
 col1, col2, col3 = st.columns([1,1,1])
