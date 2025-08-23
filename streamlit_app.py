@@ -385,7 +385,6 @@ comps = cargar_competiciones()
 ligas = comps['competition_name'].unique().tolist() if not comps.empty else ["(No disponible)"]
 
 # Cargar logo
-logo = Image.open("assets/Tactic_AI_logo.png")
 st.image(logo, width=600)  # Logo arriba del menú
 # Crear 3 columnas
 col1, col2, col3 = st.columns([1,2,1])
