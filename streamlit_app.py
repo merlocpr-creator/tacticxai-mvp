@@ -385,7 +385,7 @@ comps = cargar_competiciones()
 ligas = comps['competition_name'].unique().tolist() if not comps.empty else ["(No disponible)"]
 
 # Cargar imagen
-logo = Image.open("assets/Tactic_AI_logo.png")
+logo = Image.open("assets/Tactic_AI_logo-removebg-preview.png")
 
 # Centrar usando columnas
 col1, col2, col3 = st.columns([1,2,1])
