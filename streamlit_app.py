@@ -385,8 +385,8 @@ comps = cargar_competiciones()
 ligas = comps['competition_name'].unique().tolist() if not comps.empty else ["(No disponible)"]
 
 # Cargar logo
-    logo = Image.open("assets/Tactic AI_logo.png")
-    st.image(logo, width=180)  # Logo arriba del menú
+logo = Image.open("assets/Tactic AI_logo.png")
+st.image(logo, width=180)  # Logo arriba del menú
 # Menú lateral con nueva sección IA táctica (se respeta tal cual)
 with st.sidebar:
     selected = option_menu(
