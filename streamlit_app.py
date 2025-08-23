@@ -384,13 +384,13 @@ comps = cargar_competiciones()
 # Lista ligas disponibles
 ligas = comps['competition_name'].unique().tolist() if not comps.empty else ["(No disponible)"]
 
-# Cargar logo
+# Cargar imagen
 logo = Image.open("assets/Tactic_AI_logo.png")
-st.image(logo, width=600)  # Logo arriba del menú
-# Crear 3 columnas
+
+# Centrar usando columnas
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
-    st.image(logo, use_column_width=True)
+    st.image(logo, use_container_width=True)
 # Menú lateral con nueva sección IA táctica (se respeta tal cual)
 with st.sidebar:
     selected = option_menu(
