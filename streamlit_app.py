@@ -390,8 +390,7 @@ logo = Image.open("assets/Tactic_AI_logo-removebg-preview.png")
 # Centrar usando columnas
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
-    st.image(logo, use_container_width=True)
-    st.image(logo, width=400)
+    st.image(logo, width=450)
 # Menú lateral con nueva sección IA táctica (se respeta tal cual)
 with st.sidebar:
     selected = option_menu(
