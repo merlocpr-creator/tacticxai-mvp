@@ -1,7 +1,7 @@
 import streamlit as st
 
-# tacticsenseai_mvp_refactor.py
-# TacticsenseAI - MVP Refactorizado con análisis táctico mejorado y visualizaciones atractivas
+# tactisenseai_mvp_refactor.py
+# TactisenseAI - MVP Refactorizado con análisis táctico mejorado y visualizaciones atractivas
 # Autor: Pedro Rafael Merlo Campos – 2025
 # Requisitos: streamlit, statsbombpy, pandas, numpy, matplotlib, seaborn, mplsoccer, streamlit-option-menu, streamlit-drawable-canvas, pillow
 
@@ -27,7 +27,7 @@ from streamlit_option_menu import option_menu
 # =========================
 # CONFIGURACIÓN VISUAL
 # =========================
-st.set_page_config(page_title="TacticAI", layout="wide")
+st.set_page_config(page_title="Tactisense AI", layout="wide")
 st.markdown("""
     <style>
     .block-container { padding: 1rem 2rem; }
@@ -394,8 +394,8 @@ with col2:
 # Menú lateral con nueva sección IA táctica (se respeta tal cual)
 with st.sidebar:
     selected = option_menu(
-        menu_title="Tacticsense AI",
-        options=["Inicio", "Análisis Rival", "Análisis Propio", "Mapa de Calor", "Pizarra", "Comparativa", "Simulador", "Subir CSV", "Chat Tacticsense AI"],
+        menu_title="Tactisense AI",
+        options=["Inicio", "Análisis Rival", "Análisis Propio", "Mapa de Calor", "Pizarra", "Comparativa", "Simulador", "Subir CSV", "Chat Tactisense AI"],
         icons=["house", "trophy", "shield", "fire", "pencil", "graph-up", "play", "upload", "robot"],
         default_index=0,
     )
@@ -445,17 +445,17 @@ with col3:
 # SECCIONES DEL DASHBOARD
 # =========================
 if selected == "Inicio":
-    st.markdown("<h2 style='margin-top: 20px;'>Bienvenido a Tacticsense AI</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='margin-top: 20px;'>Bienvenido a Tactisense AI</h2>", unsafe_allow_html=True)
     st.markdown("""
     <div style='font-size:16px; line-height:1.6; text-align: justify; padding: 10px 15px; border-radius: 8px;'>
-    <strong>Tacticsense AI</strong> es una herramienta innovadora que va a revolucionar la forma en que los equipos de fútbol toman decisiones tácticas. 
+    <strong>Tactisense AI</strong> es una herramienta innovadora que va a revolucionar la forma en que los equipos de fútbol toman decisiones tácticas. 
     El MVP actual integra datos históricos de más de <strong>20 ligas a nivel mundial</strong>, desde la Premier League hasta la Copa América, 
     y permite a los entrenadores comparar rendimientos, analizar rivales y obtener sugerencias tácticas personalizadas.
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown(" ")
-    st.markdown("<h4>¿Qué puedes hacer en TacticAI?</h4>", unsafe_allow_html=True)
+    st.markdown("<h4>¿Qué puedes hacer en Tactisense AI?</h4>", unsafe_allow_html=True)
     st.markdown("""
     - Analizar a tus rivales con datos reales de partidos.
     - Obtener sugerencias tácticas adaptadas a cada formación.
@@ -689,8 +689,8 @@ elif selected == "Subir CSV":
         st.dataframe(df_csv.head())
         exportar_datos(df_csv, nombre_archivo="datos_subidos.csv")
 
-elif selected == "Chat Tacticsense AI":
-    st.header("Tacticsense AI — Chat")
+elif selected == "Chat Tactisense AI":
+    st.header("Tactisense AI — Chat")
     
     import os
     from groq import Groq, AuthenticationError, BadRequestError, APIConnectionError, RateLimitError
@@ -698,7 +698,7 @@ elif selected == "Chat Tacticsense AI":
     # Inicializa historial para Groq (incluye un mensaje system persistente)
     if "messages_groq" not in st.session_state:
         st.session_state.messages_groq = [
-            {"role": "system", "content": "Eres un asistente experto en táctica de fútbol llamado DT y formas parte de la plataforma Tacticsense AI. Tu misión es ayudar a entrenadores y analistas a tomar decisiones tácticas dentro de Tacticsense AI. Siempre responde con claridad y utiliza breves bullets cuando convenga. Solo proporciona información relacionada con tácticas, alineaciones, análisis de rivales, estrategias de juego o rendimiento de jugadores.Información sobre Tacticsense AI:Es una herramienta tecnológica enfocada en el análisis táctico de fútbol mediante datos y estadísticas. Su enfoque principal es ayudar a entrenadores y analistas a tomar decisiones estratégicas basadas en datos históricos y patrones de juego. Está en una etapa temprana de MVP, con funcionalidades básicas como análisis de rivales, sugerencias tácticas y visualización de alineaciones, pero representa la visión de un sistema completo que escalará para ofrecer predicciones y recomendaciones avanzadas.Como negocio, Tacticsense AI apunta a ser escalable ofreciendo servicios a equipos profesionales y formativos, y expandiendo funcionalidades con IA avanzada en el futuro.Instrucciones para tus respuestas:Si te preguntan sobre Tacticsense AI o tu rol, explica que eres una inteligencia artificial de Tacticsense AI diseñada para apoyar en decisiones tácticas de fútbol, y que Tacticsense AI está en etapa temprana de MVP con visión de crecimiento.Si te preguntan sobre temas no relacionados con fútbol, responde de manera cortés indicando que solo puedes ayudar en tácticas de fútbol.Responde en el idioma en el que se te haga la pregunta, adaptando tus bullets y explicaciones a ese idioma."}  
+            {"role": "system", "content": "Eres un asistente experto en táctica de fútbol llamado DT y formas parte de la plataforma Tactisense AI. Tu misión es ayudar a entrenadores y analistas a tomar decisiones tácticas dentro de Tactisense AI. Siempre responde con claridad y utiliza breves bullets cuando convenga. Solo proporciona información relacionada con tácticas, alineaciones, análisis de rivales, estrategias de juego o rendimiento de jugadores.Información sobre Tactisense AI:Es una herramienta tecnológica enfocada en el análisis táctico de fútbol mediante datos y estadísticas. Su enfoque principal es ayudar a entrenadores y analistas a tomar decisiones estratégicas basadas en datos históricos y patrones de juego. Está en una etapa temprana de MVP, con funcionalidades básicas como análisis de rivales, sugerencias tácticas y visualización de alineaciones, pero representa la visión de un sistema completo que escalará para ofrecer predicciones y recomendaciones avanzadas.Como negocio, Tactisense AI apunta a ser escalable ofreciendo servicios a equipos profesionales y formativos, y expandiendo funcionalidades con IA avanzada en el futuro.Instrucciones para tus respuestas:Si te preguntan sobre Tactisense AI o tu rol, explica que eres una inteligencia artificial de Tactisense AI diseñada para apoyar en decisiones tácticas de fútbol, y que Tacticsense AI está en etapa temprana de MVP con visión de crecimiento.Si te preguntan sobre temas no relacionados con fútbol, responde de manera cortés indicando que solo puedes ayudar en tácticas de fútbol.Responde en el idioma en el que se te haga la pregunta, adaptando tus bullets y explicaciones a ese idioma."}  
 
         ]
 
