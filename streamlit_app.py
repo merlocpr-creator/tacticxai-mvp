@@ -47,12 +47,8 @@ st.markdown("""
         align-items: stretch;
         margin-top: 20px;
     }
-    .stButton > button:hover {
-    background-color: #162a7a;
-    color: white;
-}
     .card {
-        background: white;
+        background: #222;
         border-radius: 12px;
         padding: 15px 20px;
         color: white;
