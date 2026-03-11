@@ -30,6 +30,13 @@ from streamlit_option_menu import option_menu
 st.set_page_config(page_title="Tactisense AI", layout="wide")
 st.markdown("""
     <style>
+    body {
+    background-color: white;
+}
+
+.stApp {
+    background-color: white;
+}
     .block-container { padding: 1rem 2rem; }
     h1 { text-align: center; margin-bottom: 6px; }
     /* Las tarjetas en mosaico responsivo */
