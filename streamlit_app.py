@@ -479,30 +479,44 @@ st.markdown(f"""
     }}
 
     /* ── OPTION MENU — forzar estilos en Streamlit Cloud ── */
-    [data-testid="stSidebar"] ul {{
-        padding: 0 8px !important;
+
+    /* Fondo sidebar forzado */
+    [data-testid="stSidebar"] > div:first-child {{
+        background: linear-gradient(175deg, {dark_navy} 0%, {bg_color} 100%) !important;
     }}
-    [data-testid="stSidebar"] ul li a,
-    [data-testid="stSidebar"] ul li span {{
+
+    /* Todos los nav-link en reposo */
+    .nav-link {{
         color: {text_secondary} !important;
         font-family: 'Space Grotesk', sans-serif !important;
         font-size: 13.5px !important;
         font-weight: 500 !important;
+        border-radius: 10px !important;
+        margin: 3px 0 !important;
+        padding: 11px 18px !important;
+        background: transparent !important;
     }}
-    [data-testid="stSidebar"] ul li a:hover {{
+    .nav-link:hover {{
         color: {text_primary} !important;
         background: #143252 !important;
     }}
-    [data-testid="stSidebar"] ul li.nav-item .nav-link.active,
-    [data-testid="stSidebar"] ul li .nav-link-selected {{
+    /* Íconos en reposo */
+    .nav-link svg, .nav-link i {{
+        color: #3a8fd4 !important;
+        opacity: 0.9 !important;
+    }}
+
+    /* Item seleccionado */
+    .nav-link-selected {{
         background: linear-gradient(135deg, {brand_blue} 0%, {dark_navy} 100%) !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
         border-radius: 10px !important;
+        box-shadow: 0 4px 16px rgba(0,85,149,0.45) !important;
     }}
-    [data-testid="stSidebar"] ul li .nav-link.active span,
-    [data-testid="stSidebar"] ul li .nav-link-selected span {{
+    .nav-link-selected svg, .nav-link-selected i {{
         color: #FFFFFF !important;
+        opacity: 1 !important;
     }}
 
     /* Ocultar barra blanca de Streamlit Cloud arriba */
