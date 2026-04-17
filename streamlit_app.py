@@ -29,7 +29,7 @@ from streamlit_option_menu import option_menu
 # =========================
 st.set_page_config(
     page_title="Tactisense AI",
-    page_icon="assets/Tactic_AI_logo-removebg-preview (1).png",
+    page_icon="assets/TacticSense AI logo.png",
     layout="wide"
 )
 
@@ -951,7 +951,7 @@ _loading_placeholder.markdown(f"""
 <div style='position:fixed; inset:0; z-index:99999; display:flex; flex-direction:column;
             align-items:center; justify-content:center;
             background:linear-gradient(135deg, #040404 0%, #0a1628 100%);'>
-    <img src="data:image/png;base64,{__import__('base64').b64encode(open('assets/Tactic_AI_logo-removebg-preview (1).png','rb').read()).decode()}"
+    <img src="data:image/png;base64,{__import__('base64').b64encode(open('assets/TacticSense AI logo.png','rb').read()).decode()}"
          style="width:220px; filter:brightness(0) invert(1); margin-bottom:40px;" />
     <div style='font-family:Space Grotesk,sans-serif; font-size:11px; letter-spacing:0.3em;
                 text-transform:uppercase; color:#B3B2B3; margin-bottom:28px;'>
@@ -979,8 +979,8 @@ _loading_placeholder.empty()  # Oculta la pantalla de carga al terminar
 ligas = comps['competition_name'].unique().tolist() if not comps.empty else ["(No disponible)"]
 
 # Cargar logos
-logo = Image.open("assets/Tactic_AI_logo-removebg-preview (1).png")
-logo_sidebar = Image.open("assets/Tactic_AI_logo-removebg-preview (1).png")
+logo = Image.open("assets/TacticSense AI logo.png")
+logo_sidebar = Image.open("assets/TacticSense AI logo.png")
 
 # Centrar logo principal con filtro blanco en dark mode
 st.markdown('<div class="logo-area">', unsafe_allow_html=True)
