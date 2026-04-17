@@ -477,6 +477,41 @@ st.markdown(f"""
     [data-testid="stSidebar"] hr {{
         border-color: {ghost_border} !important;
     }}
+
+    /* ── OPTION MENU — forzar estilos en Streamlit Cloud ── */
+    [data-testid="stSidebar"] ul {{
+        padding: 0 8px !important;
+    }}
+    [data-testid="stSidebar"] ul li a,
+    [data-testid="stSidebar"] ul li span {{
+        color: {text_secondary} !important;
+        font-family: 'Space Grotesk', sans-serif !important;
+        font-size: 13.5px !important;
+        font-weight: 500 !important;
+    }}
+    [data-testid="stSidebar"] ul li a:hover {{
+        color: {text_primary} !important;
+        background: #143252 !important;
+    }}
+    [data-testid="stSidebar"] ul li.nav-item .nav-link.active,
+    [data-testid="stSidebar"] ul li .nav-link-selected {{
+        background: linear-gradient(135deg, {brand_blue} 0%, {dark_navy} 100%) !important;
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        border-radius: 10px !important;
+    }}
+    [data-testid="stSidebar"] ul li .nav-link.active span,
+    [data-testid="stSidebar"] ul li .nav-link-selected span {{
+        color: #FFFFFF !important;
+    }}
+
+    /* Ocultar barra blanca de Streamlit Cloud arriba */
+    #MainMenu {{ visibility: hidden; }}
+    header[data-testid="stHeader"] {{
+        background: {bg_color} !important;
+        border-bottom: 1px solid {ghost_border} !important;
+    }}
+    .stDeployButton {{ display: none; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -1001,46 +1036,59 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# Selección liga y equipos
-col1, col2, col3 = st.columns([1,1,1])
-with col1:
-    liga_sel = st.selectbox("Selecciona una liga", ligas)
-if not comps.empty and liga_sel != "(No disponible)":
-    cond = comps['competition_name'] == liga_sel
-    try:
-        comp_id = comps[cond].iloc[0]['competition_id']
-        season_id = comps[cond].iloc[0]['season_id']
-    except Exception:
-        comp_id = None
-        season_id = None
-    matches = obtener_partidos(comp_id, season_id) if comp_id and season_id else pd.DataFrame()
-else:
-    matches = pd.DataFrame()
+def render_selectores(need_rival=True, need_prop=True):
+    """Muestra selectores de liga/equipos solo en secciones que los necesitan."""
+    # Persistir selección de liga entre secciones
+    liga_idx = 0
+    if "liga_sel" in st.session_state and st.session_state["liga_sel"] in ligas:
+        liga_idx = ligas.index(st.session_state["liga_sel"])
 
-# Normalizar nombres de equipos
-if not matches.empty:
-    matches = matches.copy()
-    matches['home_team_name'] = matches['home_team'].apply(extract_name_from_maybe_dict) if 'home_team' in matches.columns else None
-    matches['away_team_name'] = matches['away_team'].apply(extract_name_from_maybe_dict) if 'away_team' in matches.columns else None
-    equipos_home = matches['home_team_name'].dropna().unique().tolist()
-    equipos_away = matches['away_team_name'].dropna().unique().tolist()
-    equipos = sorted(list(set(equipos_home + equipos_away)))
-else:
-    equipos = []
+    ncols = 1 + int(need_rival) + int(need_prop)
+    cols = st.columns(ncols)
 
-with col2:
-    equipo_rival = st.selectbox("Equipo Rival", equipos if equipos else ["(sin datos)"])
-with col3:
-    if equipos:
-        default_prop = st.session_state.get("equipo_prop", None)
-        opciones_prop = [e for e in equipos if e != (equipo_rival if equipo_rival is not None else "")]
-        if default_prop in opciones_prop:
-            equipo_prop = st.selectbox("Tu Equipo", opciones_prop, index=opciones_prop.index(default_prop))
-        else:
-            equipo_prop = st.selectbox("Tu Equipo", opciones_prop)
-        st.session_state["equipo_prop"] = equipo_prop
+    with cols[0]:
+        liga_sel = st.selectbox("Selecciona una liga", ligas, index=liga_idx, key=f"liga_{selected}")
+    st.session_state["liga_sel"] = liga_sel
+
+    if not comps.empty and liga_sel != "(No disponible)":
+        cond = comps['competition_name'] == liga_sel
+        try:
+            comp_id  = comps[cond].iloc[0]['competition_id']
+            season_id = comps[cond].iloc[0]['season_id']
+        except Exception:
+            comp_id = season_id = None
+        _matches = obtener_partidos(comp_id, season_id) if comp_id and season_id else pd.DataFrame()
     else:
-        equipo_prop = st.selectbox("Tu Equipo", ["(sin datos)"])
+        _matches = pd.DataFrame()
+
+    if not _matches.empty:
+        _matches = _matches.copy()
+        _matches['home_team_name'] = _matches['home_team'].apply(extract_name_from_maybe_dict) if 'home_team' in _matches.columns else None
+        _matches['away_team_name'] = _matches['away_team'].apply(extract_name_from_maybe_dict) if 'away_team' in _matches.columns else None
+        _equipos = sorted(list(set(
+            _matches['home_team_name'].dropna().tolist() +
+            _matches['away_team_name'].dropna().tolist()
+        )))
+    else:
+        _equipos = []
+
+    _rival = _prop = None
+    col_idx = 1
+
+    if need_rival:
+        with cols[col_idx]:
+            _rival = st.selectbox("Equipo Rival", _equipos if _equipos else ["(sin datos)"], key=f"rival_{selected}")
+        col_idx += 1
+
+    if need_prop:
+        with cols[col_idx]:
+            opciones = [e for e in _equipos if e != (_rival or "")]
+            default  = st.session_state.get("equipo_prop", None)
+            idx      = opciones.index(default) if default in opciones else 0
+            _prop    = st.selectbox("Tu Equipo", opciones if opciones else ["(sin datos)"], index=idx, key=f"prop_{selected}")
+        st.session_state["equipo_prop"] = _prop
+
+    return _matches, _rival, _prop
 
 # =========================
 # SECCIONES DEL DASHBOARD
@@ -1159,6 +1207,7 @@ if selected == "Inicio":
 
 elif selected == "Análisis Rival":
     st.markdown(f'<div class="section-badge">Inteligencia Táctica</div>', unsafe_allow_html=True)
+    matches, equipo_rival, _ = render_selectores(need_rival=True, need_prop=False)
     st.header(f"Análisis Rival: {equipo_rival}")
     if not matches.empty and equipo_rival and equipo_rival != "(sin datos)":
         df_r = obtener_datos_eventos_por_nombre(equipo_rival, matches, max_partidos=4)
@@ -1212,6 +1261,7 @@ elif selected == "Análisis Rival":
 
 elif selected == "Análisis Propio":
     st.markdown(f'<div class="section-badge">Tu Rendimiento</div>', unsafe_allow_html=True)
+    matches, _, equipo_prop = render_selectores(need_rival=False, need_prop=True)
     st.header(f"Tu equipo: {equipo_prop}")
     if not matches.empty and equipo_prop and equipo_prop != "(sin datos)":
         df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4)
@@ -1231,6 +1281,7 @@ elif selected == "Análisis Propio":
 elif selected == "Mapa de Calor":
     st.markdown(f'<div class="section-badge">Análisis Espacial</div>', unsafe_allow_html=True)
     st.header("Mapa de Calor de Tiros")
+    matches, _, equipo_prop = render_selectores(need_rival=False, need_prop=True)
     if not matches.empty and equipo_prop and equipo_prop != "(sin datos)":
         df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=6)
         if df_p.empty:
@@ -1310,6 +1361,7 @@ elif selected == "Pizarra":
 elif selected == "Comparativa":
     st.markdown(f'<div class="section-badge">Head to Head</div>', unsafe_allow_html=True)
     st.header("Comparativa de Equipos")
+    matches, equipo_rival, equipo_prop = render_selectores(need_rival=True, need_prop=True)
     if not matches.empty and equipo_prop and equipo_rival and equipo_prop != "(sin datos)" and equipo_rival != "(sin datos)":
         df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4)
         df_r = obtener_datos_eventos_por_nombre(equipo_rival, matches, max_partidos=4)
@@ -1358,8 +1410,9 @@ elif selected == "Comparativa":
 elif selected == "Simulador":
     st.markdown(f'<div class="section-badge">Simulation Engine v1.0</div>', unsafe_allow_html=True)
     st.header("Simulador de Probabilidad")
-    df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4) if matches is not None else pd.DataFrame()
-    df_r = obtener_datos_eventos_por_nombre(equipo_rival, matches, max_partidos=4) if matches is not None else pd.DataFrame()
+    matches, equipo_rival, equipo_prop = render_selectores(need_rival=True, need_prop=True)
+    df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4) if not matches.empty else pd.DataFrame()
+    df_r = obtener_datos_eventos_por_nombre(equipo_rival, matches, max_partidos=4) if not matches.empty else pd.DataFrame()
     xg_p = df_p['xg'].sum() if not df_p.empty and 'xg' in df_p.columns else 0
     xg_r = df_r['xg'].sum() if not df_r.empty and 'xg' in df_r.columns else 0
     total = xg_p + xg_r
@@ -1394,7 +1447,7 @@ elif selected == "Simulador":
 elif selected == "Scout Report":
     st.markdown(f'<div class="section-badge">Análisis Individual</div>', unsafe_allow_html=True)
     st.header("Scout Report — Radar de Jugador")
-
+    matches, _, equipo_prop = render_selectores(need_rival=False, need_prop=True)
     if not matches.empty and equipo_prop and equipo_prop != "(sin datos)":
         df_scout = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4)
 
