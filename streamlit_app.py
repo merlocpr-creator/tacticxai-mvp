@@ -57,7 +57,7 @@ if st.session_state.theme == "TACTICAL DARK":
     dark_navy = "#003B65"
     ghost_border = "rgba(0, 85, 149, 0.22)"
     card_shadow = "0 20px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,85,149,0.12)"
-    logo_filter = "invert(1)"    # fondo blanco→negro (invisible), elementos negros→blancos
+    logo_filter = "none"    # transparent bg logo, white elements visible on dark bg
     logo_bg = "transparent"
     logo_padding = "0"
 else:
