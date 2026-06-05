@@ -1186,10 +1186,10 @@ if selected == "Inicio":
             técnicos de cualquier nivel.
         </p>
         <div style='display:flex; gap:8px; flex-wrap:wrap;'>
-            <span class="token">⚽ 20+ Ligas Globales</span>
-            <span class="token">📊 StatsBomb Open Data</span>
+            <span class="token">⚽ Liga MX</span>
+            <span class="token">📊 BSD Data</span>
             <span class="token">🤖 IA Táctica LLM</span>
-            <span class="token">📡 Análisis en Tiempo Real</span>
+            <span class="token">📡 Apertura 2025 · Clausura 2025</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -1198,16 +1198,16 @@ if selected == "Inicio":
     st.markdown("""
     <div style='display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:32px;'>
         <div class="metric-card">
-            <div class="metric-number">20+</div>
-            <div class="metric-label">Ligas Analizadas</div>
+            <div class="metric-number">2</div>
+            <div class="metric-label">Temporadas Disponibles</div>
         </div>
         <div class="metric-card">
-            <div class="metric-number">500K+</div>
-            <div class="metric-label">Tiros Procesados</div>
+            <div class="metric-number">340+</div>
+            <div class="metric-label">Partidos Analizados</div>
         </div>
         <div class="metric-card">
-            <div class="metric-number">15K+</div>
-            <div class="metric-label">Partidos en Base</div>
+            <div class="metric-number">18</div>
+            <div class="metric-label">Equipos Liga MX</div>
         </div>
         <div class="metric-card">
             <div class="metric-number">9</div>
@@ -1266,10 +1266,11 @@ if selected == "Inicio":
         </h3>
         <p style='color:{text_secondary}; font-size:0.93rem; line-height:1.82;
                   max-width:800px; font-family:Inter,sans-serif;'>
-            Tactisense AI está construida sobre datos de calidad profesional (StatsBomb) e inteligencia
-            artificial de última generación. Tactisense AI demuestra la viabilidad técnica de una plataforma
-            <strong style="color:{text_primary};">SaaS escalable</strong> que puede servir desde academias
-            juveniles hasta equipos de primer nivel, con un modelo de negocio B2B replicable a escala global.
+            Tactisense AI está construida sobre datos de calidad profesional de Liga MX (Apertura y Clausura 2025)
+            provistos por BSD, e inteligencia artificial. Tactisense AI demuestra la viabilidad
+            técnica de una plataforma <strong style="color:{text_primary};">SaaS escalable</strong> que puede servir
+            desde academias juveniles hasta equipos de primer nivel, con un modelo de negocio B2B replicable
+            a escala global.
         </p>
         <div style='display:flex; gap:10px; margin-top:22px; flex-wrap:wrap;'>
             <span class="token">B2B SaaS</span>
