@@ -645,21 +645,20 @@ def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, 
     if not todos_shots and not todos_players:
         return pd.DataFrame()
 
-    # Construir DataFrame con columnas compatibles con el resto del código
     rows = []
-   for s in todos_shots:
+    for s in todos_shots:
         rows.append({
-            "match_id":   s.get("match_id"),
-            "type_name":  "Shot",
-            "player":     str(s.get("player_id", "")),
-            "xg":         s.get("xG"),
-            "location":   [s.get("x"), s.get("y")],
-            "minute":     s.get("minute"),
-            "team_name":  equipo_nombre,
-            "formation":  s.get("formation"),
-            "result":     s.get("type") or s.get("result"),
-            "situation":  s.get("situation"),
-            "body_part":  s.get("body_part") or s.get("shot_type"),
+            "match_id":  s.get("match_id"),
+            "type_name": "Shot",
+            "player":    str(s.get("player_id", "")),
+            "xg":        s.get("xG"),
+            "location":  [s.get("x"), s.get("y")],
+            "minute":    s.get("minute"),
+            "team_name": equipo_nombre,
+            "formation": s.get("formation"),
+            "result":    s.get("type") or s.get("result"),
+            "situation": s.get("situation"),
+            "body_part": s.get("body_part") or s.get("shot_type"),
         })
     for p in todos_players:
         rows.append({
@@ -674,6 +673,7 @@ def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, 
             "passes":    p.get("passes_total"),
             "tackles":   p.get("tackles_total"),
         })
+    return pd.DataFrame(rows)
 
 # =========================
 # ANÁLISIS TÁCTICO SIMPLE
@@ -1133,7 +1133,7 @@ def render_selectores(need_rival=True, need_prop=True):
         except Exception:
             comp_id = season_id = None
         source_sel = comps[cond].iloc[0]["source"] if "source" in comps.columns else "bsd"
-_matches = obtener_partidos(comp_id, season_id, source=source_sel) if comp_id and season_id else pd.DataFrame()
+        _matches = obtener_partidos(comp_id, season_id, source=source_sel) if comp_id and season_id else pd.DataFrame()
     else:
         _matches = pd.DataFrame()
 
