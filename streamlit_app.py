@@ -10,7 +10,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from statsbombpy import sb
 from streamlit_option_menu import option_menu
 from streamlit_drawable_canvas import st_canvas
 from mplsoccer import Pitch
@@ -551,68 +550,114 @@ def safe_team_name(x):
     return extract_name_from_maybe_dict(x)
 
 # =========================
-# CARGA Y EXTRACCIÓN DE DATOS
+# CONFIG DE LA API PROPIA
 # =========================
+API_BASE = "https://t7scohixsj.execute-api.us-east-1.amazonaws.com"
+
+import requests
+
+@st.cache_data(ttl=3600)
 def cargar_competiciones():
+    """Reemplaza sb.competitions() — usa /manifest de TacticSense API."""
     try:
-        with st.spinner("Cargando competiciones de StatsBomb..."):
-            comps = sb.competitions()
-        if comps is None or comps.empty:
-            st.error("No se obtuvo información de competencias desde StatsBomb.")
-            return pd.DataFrame()
-        return comps
-    except Exception as e:
-        st.error(f"Error al cargar competiciones: {e}")
+        with st.spinner("Cargando datos de TacticSense API..."):
+            r = requests.get(f"{API_BASE}/manifest", timeout=10)
+            r.raise_for_status()
+        manifest = r.json()
+        rows = []
+        for e in manifest.get("entries", []):
+            rows.append({
+                "competition_name": f"{e['source'].upper()} · {e['league']} · S{e['season']}",
+                "competition_id":   e["league"],
+                "season_id":        e["season"],
+                "source":           e["source"],
+                "datasets":         e["datasets"],
+            })
+        return pd.DataFrame(rows)
+    except Exception as ex:
+        st.error(f"Error al conectar con TacticSense API: {ex}")
         return pd.DataFrame()
 
-def obtener_partidos(comp_id, season_id):
+@st.cache_data(ttl=3600)
+def obtener_partidos(comp_id, season_id, source="bsd"):
+    """Reemplaza sb.matches() — usa /matches de TacticSense API."""
     try:
-        with st.spinner("Descargando lista de partidos..."):
-            return sb.matches(competition_id=comp_id, season_id=season_id)
-    except Exception as e:
-        st.warning(f"No se pudieron descargar partidos: {e}")
+        params = f"source={source}&league={comp_id}&season={season_id}"
+        with st.spinner("Descargando partidos..."):
+            r = requests.get(f"{API_BASE}/matches?{params}", timeout=15)
+            r.raise_for_status()
+        data = r.json()
+        df = pd.DataFrame(data)
+        # Normalizar nombres de columnas para que el resto del código funcione igual
+        if "home_team" in df.columns:
+            df["home_team_name"] = df["home_team"]
+        if "away_team" in df.columns:
+            df["away_team_name"] = df["away_team"]
+        if "event_date" in df.columns:
+            df["match_date"] = df["event_date"]
+        if "datetime" in df.columns:
+            df["match_date"] = df["datetime"]
+        df["match_id"] = df["id"]
+        return df
+    except Exception as ex:
+        st.warning(f"No se pudieron descargar partidos: {ex}")
         return pd.DataFrame()
 
-@st.cache_data(show_spinner=True)
-def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3):
+@st.cache_data(ttl=3600)
+def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, source="bsd", league="league_19", season="296"):
+    """Reemplaza sb.events() — usa /shots + /player-stats de TacticSense API."""
     if matches_df is None or matches_df.empty:
         return pd.DataFrame()
+
     partidos_equipo = matches_df[
-        (matches_df['home_team_name'] == equipo_nombre) | (matches_df['away_team_name'] == equipo_nombre)
+        (matches_df["home_team_name"] == equipo_nombre) |
+        (matches_df["away_team_name"] == equipo_nombre)
     ].copy()
+
     if partidos_equipo.empty:
         return pd.DataFrame()
-    if 'match_date' in partidos_equipo.columns:
-        partidos_equipo = partidos_equipo.sort_values('match_date', ascending=False)
-    partidos_ids = partidos_equipo['match_id'].head(max_partidos).tolist()
-    eventos = []
-    for mid in partidos_ids:
+    if "match_date" in partidos_equipo.columns:
+        partidos_equipo = partidos_equipo.sort_values("match_date", ascending=False)
+
+    params = f"source={source}&league={league}&season={season}"
+    todos_shots = []
+    todos_players = []
+
+    for mid in partidos_equipo["match_id"].head(max_partidos).tolist():
+        # Shots
         try:
-            with st.spinner(f"Cargando eventos del partido {mid}..."):
-                ev = sb.events(match_id=mid)
-            if ev is not None and not ev.empty:
-                eventos.append(ev)
-        except Exception as e:
-            st.warning(f"Error descargando eventos para match_id {mid}: {e}")
-    if not eventos:
+            r = requests.get(f"{API_BASE}/matches/{mid}/shots?{params}", timeout=10)
+            if r.ok:
+                shots = r.json()
+                for s in shots:
+                    s["match_id"] = mid
+                todos_shots.extend(shots)
+        except Exception:
+            pass
+        # Player stats
+        try:
+            r = requests.get(f"{API_BASE}/matches/{mid}/player-stats?{params}", timeout=10)
+            if r.ok:
+                todos_players.extend(r.json())
+        except Exception:
+            pass
+
+    if not todos_shots and not todos_players:
         return pd.DataFrame()
-    df = pd.concat(eventos, ignore_index=True)
-    # Normalizar columnas
-    df['type_name'] = df['type'].apply(safe_type_name) if 'type' in df.columns else None
-    df['team_name'] = df['team'].apply(safe_team_name) if 'team' in df.columns else None
-    # xG column
-    if 'shot_statsbomb_xg' in df.columns:
-        df['xg'] = df['shot_statsbomb_xg']
-    else:
-        if 'shot' in df.columns:
-            df['xg'] = df['shot'].apply(lambda s: s.get('statsbomb_xg') if isinstance(s, dict) else None)
-        else:
-            df['xg'] = None
-    # columnas básicas mínimas
-    for col in ['player', 'location', 'minute']:
-        if col not in df.columns:
-            df[col] = None
-    return df
+
+    # Construir DataFrame con columnas compatibles con el resto del código
+    rows = []
+    for s in todos_shots:
+        rows.append({
+            "match_id":   s.get("match_id"),
+            "type_name":  "Shot",
+            "player":     str(s.get("player_id", "")),
+            "xg":         s.get("xG"),
+            "location":   [s.get("x"), s.get("y")],
+            "minute":     s.get("minute"),
+            "team_name":  equipo_nombre,
+            "formation":  s.get("formation"),
+            "result":
 
 # =========================
 # ANÁLISIS TÁCTICO SIMPLE
@@ -1071,7 +1116,8 @@ def render_selectores(need_rival=True, need_prop=True):
             season_id = comps[cond].iloc[0]['season_id']
         except Exception:
             comp_id = season_id = None
-        _matches = obtener_partidos(comp_id, season_id) if comp_id and season_id else pd.DataFrame()
+        source_sel = comps[cond].iloc[0]["source"] if "source" in comps.columns else "bsd"
+_matches = obtener_partidos(comp_id, season_id, source=source_sel) if comp_id and season_id else pd.DataFrame()
     else:
         _matches = pd.DataFrame()
 
@@ -1619,9 +1665,11 @@ st.markdown(f"""
                      letter-spacing:0.08em; text-transform:uppercase;'>Powered by</span>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="footer-logo">', unsafe_allow_html=True)
-logo_sb = Image.open("assets/StatsBomb logo.png")
-st.image(logo_sb, width=110)
-st.markdown('</div>', unsafe_allow_html=True)
-
-st.markdown("</div></div>", unsafe_allow_html=True)
+st.markdown(f"""
+<div style='...'>  <!-- tu div de footer actual -->
+    <span style='color:{text_secondary}; font-size:0.75rem; font-family:Space Grotesk,sans-serif;
+                 letter-spacing:0.08em; text-transform:uppercase;'>
+        Powered by BSD · TacticSense API
+    </span>
+</div>
+""", unsafe_allow_html=True)
