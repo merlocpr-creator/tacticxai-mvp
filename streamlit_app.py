@@ -647,7 +647,7 @@ def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, 
 
     # Construir DataFrame con columnas compatibles con el resto del código
     rows = []
-    for s in todos_shots:
+   for s in todos_shots:
         rows.append({
             "match_id":   s.get("match_id"),
             "type_name":  "Shot",
@@ -657,7 +657,23 @@ def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, 
             "minute":     s.get("minute"),
             "team_name":  equipo_nombre,
             "formation":  s.get("formation"),
-            "result":
+            "result":     s.get("type") or s.get("result"),
+            "situation":  s.get("situation"),
+            "body_part":  s.get("body_part") or s.get("shot_type"),
+        })
+    for p in todos_players:
+        rows.append({
+            "match_id":  p.get("match_id"),
+            "type_name": "PlayerStat",
+            "player":    str(p.get("player_id", "")),
+            "xg":        p.get("expected_goals"),
+            "location":  None,
+            "minute":    p.get("minutes"),
+            "team_name": equipo_nombre,
+            "rating":    p.get("rating"),
+            "passes":    p.get("passes_total"),
+            "tackles":   p.get("tackles_total"),
+        })
 
 # =========================
 # ANÁLISIS TÁCTICO SIMPLE
