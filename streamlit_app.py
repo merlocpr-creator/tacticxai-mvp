@@ -1,9 +1,3 @@
-import streamlit as st
-
-# tactisenseai_mvp_refactor.py
-# TactisenseAI - Plataforma de análisis táctico de fútbol con IA
-# Autor: Pedro Rafael Merlo Campos
-# Requisitos: streamlit, statsbombpy, pandas, numpy, matplotlib, seaborn, mplsoccer, streamlit-option-menu, streamlit-drawable-canvas, pillow
 
 import streamlit as st
 import pandas as pd
@@ -16,13 +10,8 @@ from mplsoccer import Pitch
 from PIL import Image
 from io import BytesIO
 import random
-import subprocess
-import sys
-import groq
-import streamlit as st
-from PIL import Image
-from streamlit_option_menu import option_menu
-
+import requests
+ 
 # =========================
 # CONFIGURACIÓN VISUAL & THEME (TACTISENSE OBSIDIAN)
 # =========================
@@ -31,18 +20,18 @@ st.set_page_config(
     page_icon="assets/TacticSense AI logo.png",
     layout="wide"
 )
-
+ 
 # Google Fonts and Design System Tokens
 st.markdown("""
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@300;400;500;700&family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
 """, unsafe_allow_html=True)
-
+ 
 # Theme State Management
 if "theme" not in st.session_state:
     st.session_state.theme = "TACTICAL DARK"
-
+ 
 # Official Design System Tokens — Tactisense Brand Palette
 if st.session_state.theme == "TACTICAL DARK":
     bg_color = "#040404"
@@ -56,7 +45,7 @@ if st.session_state.theme == "TACTICAL DARK":
     dark_navy = "#003B65"
     ghost_border = "rgba(0, 85, 149, 0.22)"
     card_shadow = "0 20px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,85,149,0.12)"
-    logo_filter = "none"    # transparent bg logo, white elements visible on dark bg
+    logo_filter = "none"
     logo_bg = "transparent"
     logo_padding = "0"
 else:
@@ -74,15 +63,9 @@ else:
     logo_filter = "none"
     logo_bg = "transparent"
     logo_padding = "0"
-
+ 
 st.markdown(f"""
     <style>
-    /* =========================================================
-       TACTISENSE AI — DESIGN SYSTEM v2.0
-       Palette: #005595 · #003B65 · #B3B2B3 · #040404 · #FFFFFF
-    ========================================================= */
-
-    /* BASE */
     .stApp {{
         background: {bg_color};
         font-family: 'Inter', sans-serif;
@@ -91,14 +74,10 @@ st.markdown(f"""
         padding: 2.5rem 3rem 4rem !important;
         max-width: 1400px !important;
     }}
-
-    /* SCROLLBAR */
     ::-webkit-scrollbar {{ width: 5px; height: 5px; }}
     ::-webkit-scrollbar-track {{ background: {bg_color}; }}
     ::-webkit-scrollbar-thumb {{ background: {brand_blue}; border-radius: 4px; }}
     ::-webkit-scrollbar-thumb:hover {{ background: {accent_blue}; }}
-
-    /* SIDEBAR */
     [data-testid="stSidebar"] {{
         background: linear-gradient(175deg, {dark_navy} 0%, {bg_color} 100%) !important;
         border-right: 1px solid {ghost_border} !important;
@@ -106,8 +85,6 @@ st.markdown(f"""
     [data-testid="stSidebar"] .block-container {{
         padding: 1.5rem 0.75rem !important;
     }}
-
-    /* TYPOGRAPHY */
     h1, h2, h3, h4 {{
         font-family: 'Outfit', sans-serif !important;
         color: {text_primary} !important;
@@ -119,8 +96,6 @@ st.markdown(f"""
     h2 {{ font-size: 2rem !important; }}
     h3 {{ font-size: 1.3rem !important; font-weight: 700 !important; }}
     p, li {{ color: {text_primary}; font-family: 'Inter', sans-serif; }}
-
-    /* HERO BLOCK */
     .hero-container {{
         background: linear-gradient(140deg, rgba(0,59,101,0.92) 0%, rgba(0,85,149,0.28) 55%, rgba(4,4,4,0.96) 100%);
         border: 1px solid {ghost_border};
@@ -146,16 +121,12 @@ st.markdown(f"""
         background: radial-gradient(circle, rgba(0,59,101,0.18) 0%, transparent 70%);
         pointer-events: none;
     }}
-
-    /* GRADIENT TEXT */
     .gradient-text {{
         background: linear-gradient(125deg, {brand_blue} 0%, {text_secondary} 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
     }}
-
-    /* SECTION BADGE */
     .section-badge {{
         display: inline-flex;
         align-items: center;
@@ -171,8 +142,6 @@ st.markdown(f"""
         margin-bottom: 18px;
         font-family: 'Space Grotesk', sans-serif;
     }}
-
-    /* METRIC CARD */
     .metric-card {{
         background: linear-gradient(145deg, {surface_card} 0%, {surface_base} 100%);
         border: 1px solid {ghost_border};
@@ -212,8 +181,6 @@ st.markdown(f"""
         font-family: 'Space Grotesk', sans-serif;
         font-weight: 600;
     }}
-
-    /* FEATURE CARD */
     .feature-card {{
         background: {surface_card};
         border: 1px solid {ghost_border};
@@ -243,8 +210,6 @@ st.markdown(f"""
         line-height: 1.65;
         font-family: 'Inter', sans-serif;
     }}
-
-    /* DATA MODULE */
     .module {{
         background: {surface_card};
         border: 1px solid {ghost_border};
@@ -260,8 +225,6 @@ st.markdown(f"""
         background: {surface_overlay};
         box-shadow: {card_shadow};
     }}
-
-    /* STAT NUMBER */
     .stat {{
         font-family: 'Outfit', sans-serif;
         font-size: 2.8rem;
@@ -270,8 +233,6 @@ st.markdown(f"""
         line-height: 1;
         letter-spacing: -0.04em;
     }}
-
-    /* TOKEN / CHIP */
     .token {{
         display: inline-flex;
         align-items: center;
@@ -288,16 +249,12 @@ st.markdown(f"""
         font-weight: 600;
         font-family: 'Space Grotesk', sans-serif;
     }}
-
-    /* GLOW DIVIDER */
     .glow-divider {{
         height: 1px;
         background: linear-gradient(90deg, transparent 0%, {brand_blue} 50%, transparent 100%);
         margin: 36px 0;
         opacity: 0.45;
     }}
-
-    /* HERO METRIC (Simulator) */
     .hero-metric {{
         font-family: 'Outfit', sans-serif;
         font-size: 5.5rem;
@@ -314,8 +271,6 @@ st.markdown(f"""
         color: {text_secondary};
         font-weight: 700;
     }}
-
-    /* BUTTONS */
     .stButton > button {{
         background: linear-gradient(135deg, {brand_blue} 0%, {dark_navy} 100%) !important;
         color: #FFFFFF !important;
@@ -334,8 +289,6 @@ st.markdown(f"""
         transform: translateY(-2px) !important;
         box-shadow: 0 8px 28px rgba(0,85,149,0.55) !important;
     }}
-
-    /* INPUTS */
     .stSelectbox [data-baseweb="select"] > div {{
         background: {surface_card} !important;
         border: 1px solid {ghost_border} !important;
@@ -352,8 +305,6 @@ st.markdown(f"""
         text-transform: uppercase !important;
         font-weight: 600 !important;
     }}
-
-    /* FORMATION BADGE */
     .formation-badge {{
         background: {surface_card};
         border: 1px solid {ghost_border};
@@ -383,22 +334,16 @@ st.markdown(f"""
         color: {text_secondary};
         margin: 4px 0;
     }}
-
-    /* CARD GRID CONTAINER */
     .card-container {{
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
         gap: 16px;
     }}
-
-    /* CHAT */
     [data-testid="stChatMessage"] {{
         background: {surface_card} !important;
         border: 1px solid {ghost_border} !important;
         border-radius: 12px !important;
     }}
-
-    /* INVESTOR CALLOUT */
     .investor-block {{
         background: {surface_card};
         border: 1px solid {ghost_border};
@@ -406,16 +351,12 @@ st.markdown(f"""
         border-radius: 16px;
         padding: 36px 40px;
     }}
-
-    /* MARKDOWN HORIZONTAL RULE */
     hr {{
         border: none !important;
         height: 1px !important;
         background: linear-gradient(90deg, transparent, {ghost_border}, transparent) !important;
         margin: 32px 0 !important;
     }}
-
-    /* MAIN HEADER LOGO */
     .logo-area [data-testid="stImage"] img {{
         filter: {logo_filter} drop-shadow(0 4px 28px rgba(0,85,149,0.50));
         background: {logo_bg};
@@ -424,8 +365,6 @@ st.markdown(f"""
         margin: 0 auto;
         transition: filter 0.3s ease;
     }}
-
-    /* SIDEBAR LOGO */
     .sidebar-logo [data-testid="stImage"] img {{
         filter: {logo_filter};
         background: transparent;
@@ -433,35 +372,22 @@ st.markdown(f"""
         display: block;
         margin: 0 auto;
     }}
-
-    /* FOOTER LOGO — fondo blanco pequeño */
     .footer-logo [data-testid="stImage"] img {{
         background: rgba(255,255,255,0.88);
         border-radius: 8px;
         padding: 6px 14px;
         filter: drop-shadow(0 2px 10px rgba(0,85,149,0.28));
     }}
-
-    /* ── SIDEBAR PREMIUM OVERRIDES ───────────────────────────── */
-
-    /* Quitar padding extra del bloque de sidebar */
     [data-testid="stSidebar"] > div:first-child {{
         padding-top: 0 !important;
     }}
-
-    /* Nav items: fuente y transición suave */
     [data-testid="stSidebar"] nav a {{
-        transition: background 0.2s ease, color 0.2s ease,
-                    box-shadow 0.2s ease !important;
+        transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease !important;
     }}
-
-    /* Hover state con borde izquierdo azul sutil */
     [data-testid="stSidebar"] nav a:hover {{
         border-left: 2px solid {brand_blue} !important;
         padding-left: 14px !important;
     }}
-
-    /* Íconos del menú: tamaño y alineación */
     [data-testid="stSidebar"] nav a svg,
     [data-testid="stSidebar"] nav a i {{
         opacity: 0.85;
@@ -471,20 +397,12 @@ st.markdown(f"""
     [data-testid="stSidebar"] nav a:hover i {{
         opacity: 1;
     }}
-
-    /* Separador decorativo sobre la firma */
     [data-testid="stSidebar"] hr {{
         border-color: {ghost_border} !important;
     }}
-
-    /* ── OPTION MENU — forzar estilos en Streamlit Cloud ── */
-
-    /* Fondo sidebar forzado */
     [data-testid="stSidebar"] > div:first-child {{
         background: linear-gradient(175deg, {dark_navy} 0%, {bg_color} 100%) !important;
     }}
-
-    /* Todos los nav-link en reposo */
     .nav-link {{
         color: {text_secondary} !important;
         font-family: 'Space Grotesk', sans-serif !important;
@@ -499,13 +417,10 @@ st.markdown(f"""
         color: {text_primary} !important;
         background: #143252 !important;
     }}
-    /* Íconos en reposo */
     .nav-link svg, .nav-link i {{
         color: #3a8fd4 !important;
         opacity: 0.9 !important;
     }}
-
-    /* Item seleccionado */
     .nav-link-selected {{
         background: linear-gradient(135deg, {brand_blue} 0%, {dark_navy} 100%) !important;
         color: #FFFFFF !important;
@@ -517,8 +432,6 @@ st.markdown(f"""
         color: #FFFFFF !important;
         opacity: 1 !important;
     }}
-
-    /* Ocultar barra blanca de Streamlit Cloud arriba */
     #MainMenu {{ visibility: hidden; }}
     header[data-testid="stHeader"] {{
         background: {bg_color} !important;
@@ -527,7 +440,7 @@ st.markdown(f"""
     .stDeployButton {{ display: none; }}
     </style>
 """, unsafe_allow_html=True)
-
+ 
 # =========================
 # HELPERS ROBUSTOS
 # =========================
@@ -540,25 +453,22 @@ def extract_name_from_maybe_dict(v):
                 return val
         return str(v)
     return v
-
+ 
 def safe_type_name(x):
     if isinstance(x, dict):
         return x.get('name') or x.get('type') or None
     return x
-
+ 
 def safe_team_name(x):
     return extract_name_from_maybe_dict(x)
-
+ 
 # =========================
 # CONFIG DE LA API PROPIA
 # =========================
 API_BASE = "https://t7scohixsj.execute-api.us-east-1.amazonaws.com"
-
-import requests
-
+ 
 @st.cache_data(ttl=3600)
 def cargar_competiciones():
-    """Reemplaza sb.competitions() — usa /manifest de TacticSense API."""
     try:
         with st.spinner("Cargando datos de TacticSense API..."):
             r = requests.get(f"{API_BASE}/manifest", timeout=10)
@@ -577,10 +487,9 @@ def cargar_competiciones():
     except Exception as ex:
         st.error(f"Error al conectar con TacticSense API: {ex}")
         return pd.DataFrame()
-
+ 
 @st.cache_data(ttl=3600)
 def obtener_partidos(comp_id, season_id, source="bsd"):
-    """Reemplaza sb.matches() — usa /matches de TacticSense API."""
     try:
         params = f"source={source}&league={comp_id}&season={season_id}"
         with st.spinner("Descargando partidos..."):
@@ -588,43 +497,42 @@ def obtener_partidos(comp_id, season_id, source="bsd"):
             r.raise_for_status()
         data = r.json()
         df = pd.DataFrame(data)
-        # Normalizar nombres de columnas para que el resto del código funcione igual
+        # La API retorna home_team y away_team como strings directos
         if "home_team" in df.columns:
             df["home_team_name"] = df["home_team"]
         if "away_team" in df.columns:
             df["away_team_name"] = df["away_team"]
+        # El campo de fecha es event_date según la documentación
         if "event_date" in df.columns:
             df["match_date"] = df["event_date"]
-        if "datetime" in df.columns:
-            df["match_date"] = df["datetime"]
-        df["match_id"] = df["id"]
+        # El campo id existe según la documentación
+        if "id" in df.columns:
+            df["match_id"] = df["id"]
         return df
     except Exception as ex:
         st.warning(f"No se pudieron descargar partidos: {ex}")
         return pd.DataFrame()
-
+ 
 @st.cache_data(ttl=3600)
 def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, source="bsd", league="league_19", season="296"):
-    """Reemplaza sb.events() — usa /shots + /player-stats de TacticSense API."""
     if matches_df is None or matches_df.empty:
         return pd.DataFrame()
-
+ 
     partidos_equipo = matches_df[
         (matches_df["home_team_name"] == equipo_nombre) |
         (matches_df["away_team_name"] == equipo_nombre)
     ].copy()
-
+ 
     if partidos_equipo.empty:
         return pd.DataFrame()
     if "match_date" in partidos_equipo.columns:
         partidos_equipo = partidos_equipo.sort_values("match_date", ascending=False)
-
+ 
     params = f"source={source}&league={league}&season={season}"
     todos_shots = []
     todos_players = []
-
+ 
     for mid in partidos_equipo["match_id"].head(max_partidos).tolist():
-        # Shots
         try:
             r = requests.get(f"{API_BASE}/matches/{mid}/shots?{params}", timeout=10)
             if r.ok:
@@ -634,47 +542,56 @@ def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, 
                 todos_shots.extend(shots)
         except Exception:
             pass
-        # Player stats
         try:
             r = requests.get(f"{API_BASE}/matches/{mid}/player-stats?{params}", timeout=10)
             if r.ok:
                 todos_players.extend(r.json())
         except Exception:
             pass
-
+ 
     if not todos_shots and not todos_players:
         return pd.DataFrame()
-
+ 
     rows = []
     for s in todos_shots:
         rows.append({
             "match_id":  s.get("match_id"),
             "type_name": "Shot",
-            "player":    str(s.get("player_id", "")),
+            # CAMBIO: el campo player en /shots es el nombre del jugador (string),
+            # player_id es el ID numérico (sistema v1, 7 dígitos)
+            "player":    s.get("player"),
+            "player_id": s.get("player_id"),
+            # CAMBIO: la API retorna xG en mayúscula
             "xg":        s.get("xG"),
-            "location":  [s.get("x"), s.get("y")],
+            # CAMBIO: la API retorna x e y como campos directos, no como lista location
+            "x":         s.get("x"),
+            "y":         s.get("y"),
             "minute":    s.get("minute"),
-            "team_name": equipo_nombre,
+            "team_name": s.get("team"),
             "formation": s.get("formation"),
-            "result":    s.get("type") or s.get("result"),
+            "result":    s.get("type"),
             "situation": s.get("situation"),
-            "body_part": s.get("body_part") or s.get("shot_type"),
+            "body_part": s.get("body_part"),
         })
     for p in todos_players:
         rows.append({
             "match_id":  p.get("match_id"),
             "type_name": "PlayerStat",
+            # CAMBIO: en /player-stats el campo player es null para source bsd,
+            # usar player_id (sistema v2, 5 dígitos) como identificador
             "player":    str(p.get("player_id", "")),
+            "player_id": p.get("player_id"),
             "xg":        p.get("expected_goals"),
-            "location":  None,
+            "x":         None,
+            "y":         None,
             "minute":    p.get("minutes"),
-            "team_name": equipo_nombre,
+            "team_name": p.get("team"),
             "rating":    p.get("rating"),
             "passes":    p.get("passes_total"),
             "tackles":   p.get("tackles_total"),
         })
     return pd.DataFrame(rows)
-
+ 
 # =========================
 # ANÁLISIS TÁCTICO SIMPLE
 # =========================
@@ -687,45 +604,38 @@ def evaluar_rendimiento_xg(df_eventos, jugador, umbral=0.1):
         return f"{jugador} tiene un buen promedio de xG: {xg_promedio:.2f}."
     else:
         return f"{jugador} podría mejorar su rendimiento con xG promedio de {xg_promedio:.2f}."
-
+ 
 def sugerir_formacion(fortalezas, debilidades):
-    """
-    Reglas básicas:
-    - Si fortaleza = bandas + debilidad rival = laterales, sugerir 4-3-3 / 3-4-3 y presionar por fuera.
-    - Si fortaleza = juego interior + debilidad rival = mediocentro, sugerir 4-2-3-1 / 4-4-2 rombo.
-    - Si rival sufre balones a la espalda, sugerir línea de 3 arriba (4-3-3) con extremos rápidos.
-    - Si rival domina posesión pero sufre transiciones, sugerir 4-4-2 compacto y contra.
-    """
     recomendaciones = []
     sugeridas = set()
-
+ 
     def add(form, motivo):
         if form not in sugeridas:
             sugeridas.add(form)
             recomendaciones.append((form, motivo))
-
+ 
     if ("Bandas fuertes" in fortalezas and "Laterales débiles" in debilidades) or \
        ("Centros precisos" in fortalezas and "Juego aéreo débil" in debilidades):
         add("4-3-3", "Aprovecha amplitud y centros desde las bandas.")
         add("3-4-3", "Carrileros altos para fijar laterales rivales y cargar el área.")
-
+ 
     if ("Juego interior" in fortalezas and "Mediocentro débil" in debilidades) or \
        ("Mediapunta creativo" in fortalezas and "Entre líneas" in debilidades):
         add("4-2-3-1", "Estructura para dominar carril central y activar 10 libre.")
         add("4-4-2 (rombo)", "Superioridad por dentro con 4 carriles interiores.")
-
+ 
     if "Espalda de la defensa" in debilidades:
         add("4-3-3", "Extremos atacando profundidad y diagonales a la espalda.")
         add("4-2-2-2", "Doble punta para atacar rupturas constantes.")
-
+ 
     if "Sufre transiciones" in debilidades:
         add("4-4-2", "Bloque medio-bajo, robo y salida rápida por bandas.")
         add("5-3-2", "Seguridad atrás y dos puntas para correr al espacio.")
-
+ 
     if not recomendaciones:
         add("4-3-3", "Config. base equilibrada si no hay señales claras.")
     return recomendaciones
-
+ 
 # =========================
 # VISUALIZACIONES
 # =========================
@@ -756,7 +666,7 @@ def graficar_xg_por_jugador(df_eventos):
     plt.tight_layout()
     st.pyplot(fig)
     plt.close(fig)
-
+ 
 # =========================
 # EXPORTACIÓN
 # =========================
@@ -768,13 +678,11 @@ def exportar_datos(df, nombre_archivo="datos_exportados.csv"):
         file_name=nombre_archivo,
         mime='text/csv'
     )
-
+ 
 # =========================
 # UTILIDADES PIZARRA / CANVAS
 # =========================
 def render_pitch_image(width=900, height=600, theme="green"):
-    """Genera una imagen de cancha y la devuelve como PIL.Image para usar en st_canvas."""
-    # mplsoccer usa dimensiones proporcionales, convertimos a imagen
     pitch = Pitch(pitch_type='statsbomb',
                   pitch_color='black' if theme == "black" else '#2E7D32',
                   line_color='white')
@@ -786,13 +694,8 @@ def render_pitch_image(width=900, height=600, theme="green"):
     plt.close(fig)
     buf.seek(0)
     return Image.open(buf)
-
+ 
 def formation_template(name):
-    """
-    Devuelve posiciones normalizadas (0..1) para 11 jugadores (x,y) en StatsBomb orientation (0-120 x, 0-80 y)
-    Normalizamos al lienzo en pixeles multiplicando por canvas width/height.
-    """
-    # GK + líneas por defecto
     templates = {
         "4-3-3": [(0.07,0.50),
                   (0.20,0.15),(0.20,0.40),(0.20,0.60),(0.20,0.85),
@@ -826,9 +729,8 @@ def formation_template(name):
                           (0.72,0.40),(0.72,0.60)]
     }
     return templates.get(name, templates["4-3-3"])
-
+ 
 def make_token(x, y, label, fill="#1976D2", radius=16, selectable=True):
-    """Crea un objeto tipo círculo (fabric.js) para st_canvas initial_drawing."""
     return {
         "type": "circle",
         "left": float(x - radius),
@@ -846,7 +748,7 @@ def make_token(x, y, label, fill="#1976D2", radius=16, selectable=True):
         "lockRotation": True,
         "text": label
     }
-
+ 
 def make_label(x, y, text, color="#ffffff", selectable=False):
     return {
         "type": "textbox",
@@ -859,7 +761,7 @@ def make_label(x, y, text, color="#ffffff", selectable=False):
         "selectable": selectable,
         "editable": False
     }
-
+ 
 def make_zone_rect(x, y, w, h, label, stroke="#FF5252", fill="rgba(255,82,82,0.15)"):
     return [
         {
@@ -877,19 +779,16 @@ def make_zone_rect(x, y, w, h, label, stroke="#FF5252", fill="rgba(255,82,82,0.1
         },
         make_label(x + 6, y + 6, label, color=stroke, selectable=False)
     ]
-
+ 
 def build_initial_board(width, height, formation_name, color="#1976D2", opponent_color="#E53935",
                         show_weak_left=False, show_weak_right=False, show_halfspace=False):
     objs = []
-    # Zonas débiles predefinidas (oponente)
     if show_weak_left:
-        objs += make_zone_rect( width*0.55, height*0.05, width*0.40, height*0.20, "Zona débil: Lado Izquierdo", stroke="#FF7043")
+        objs += make_zone_rect(width*0.55, height*0.05, width*0.40, height*0.20, "Zona débil: Lado Izquierdo", stroke="#FF7043")
     if show_weak_right:
-        objs += make_zone_rect( width*0.55, height*0.75, width*0.40, height*0.20, "Zona débil: Lado Derecho", stroke="#FF7043")
+        objs += make_zone_rect(width*0.55, height*0.75, width*0.40, height*0.20, "Zona débil: Lado Derecho", stroke="#FF7043")
     if show_halfspace:
-        objs += make_zone_rect( width*0.45, height*0.30, width*0.20, height*0.40, "Entre líneas / Media luna", stroke="#FF5252", fill="rgba(255,82,82,0.12)")
-
-    # Fichas propias
+        objs += make_zone_rect(width*0.45, height*0.30, width*0.20, height*0.40, "Entre líneas / Media luna", stroke="#FF5252", fill="rgba(255,82,82,0.12)")
     coords = formation_template(formation_name)
     for i, (nx, ny) in enumerate(coords, start=1):
         x = nx * width
@@ -897,64 +796,59 @@ def build_initial_board(width, height, formation_name, color="#1976D2", opponent
         label = "GK" if i == 1 else str(i)
         objs.append(make_token(x, y, label, fill=color, selectable=True))
         objs.append(make_label(x-6, y-32, label, color="#fff"))
-
-    # Fichas rivales (fijas de referencia)
     opp_coords = formation_template("4-4-2")
     for i, (nx, ny) in enumerate(opp_coords, start=1):
-        x = (1.0 - nx) * width   # espejo
-        y = (1.0 - ny) * height  # espejo vertical para variar
+        x = (1.0 - nx) * width
+        y = (1.0 - ny) * height
         label = "GK" if i == 1 else str(i)
         objs.append(make_token(x, y, label, fill=opponent_color, selectable=False))
-
     return {"objects": objs, "background": "transparent"}
-
+ 
 # =========================
 # SCOUT REPORT — RADAR
 # =========================
 def calcular_metricas_jugador(df, jugador):
-    """Calcula 6 métricas normalizadas (0-100) para el radar."""
     metricas = {
-        "xG":           0.0,
-        "Tiros":        0.0,
-        "Pases":        0.0,
-        "Presión":      0.0,
-        "Duelos":       0.0,
-        "Regates":      0.0,
+        "xG":      0.0,
+        "Tiros":   0.0,
+        "Pases":   0.0,
+        "Presión": 0.0,
+        "Duelos":  0.0,
+        "Regates": 0.0,
     }
     df_j = df[df['player'] == jugador]
     if df_j.empty:
         return metricas
-
+ 
     if 'type_name' in df.columns:
         metricas["Tiros"]   = (df_j['type_name'] == 'Shot').sum()
         metricas["Pases"]   = (df_j['type_name'] == 'Pass').sum()
         metricas["Presión"] = (df_j['type_name'] == 'Pressure').sum()
         metricas["Duelos"]  = (df_j['type_name'] == 'Duel').sum()
         metricas["Regates"] = (df_j['type_name'].isin(['Dribble', 'Carry'])).sum()
-
+ 
     if 'xg' in df_j.columns:
         metricas["xG"] = df_j['xg'].sum() if df_j['xg'].notna().any() else 0.0
-
-    # Normalizar respecto al máximo de todos los jugadores del dataset
+ 
     todos = {}
     for jugador_i in df['player'].dropna().unique():
         df_i = df[df['player'] == jugador_i]
         todos[jugador_i] = {
             "xG":      df_i['xg'].sum() if 'xg' in df_i.columns and df_i['xg'].notna().any() else 0,
-            "Tiros":   (df_i['type_name'] == 'Shot').sum()    if 'type_name' in df_i.columns else 0,
-            "Pases":   (df_i['type_name'] == 'Pass').sum()    if 'type_name' in df_i.columns else 0,
+            "Tiros":   (df_i['type_name'] == 'Shot').sum()     if 'type_name' in df_i.columns else 0,
+            "Pases":   (df_i['type_name'] == 'Pass').sum()     if 'type_name' in df_i.columns else 0,
             "Presión": (df_i['type_name'] == 'Pressure').sum() if 'type_name' in df_i.columns else 0,
-            "Duelos":  (df_i['type_name'] == 'Duel').sum()    if 'type_name' in df_i.columns else 0,
+            "Duelos":  (df_i['type_name'] == 'Duel').sum()     if 'type_name' in df_i.columns else 0,
             "Regates": (df_i['type_name'].isin(['Dribble','Carry'])).sum() if 'type_name' in df_i.columns else 0,
         }
-
+ 
     normalizadas = {}
     for k, v in metricas.items():
         maximo = max((todos[j][k] for j in todos), default=1)
         normalizadas[k] = round(100 * v / maximo, 1) if maximo > 0 else 0.0
     return normalizadas
-
-
+ 
+ 
 def graficar_radar(metricas: dict, jugador: str):
     labels  = list(metricas.keys())
     valores = list(metricas.values())
@@ -962,12 +856,10 @@ def graficar_radar(metricas: dict, jugador: str):
     angulos = [n / float(N) * 2 * np.pi for n in range(N)]
     angulos += angulos[:1]
     valores += valores[:1]
-
+ 
     fig, ax = plt.subplots(figsize=(6, 6), subplot_kw=dict(polar=True))
     fig.patch.set_facecolor("#0d1f35")
     ax.set_facecolor("#0d1f35")
-
-    # Grid y spines
     ax.set_theta_offset(np.pi / 2)
     ax.set_theta_direction(-1)
     ax.spines['polar'].set_visible(False)
@@ -977,36 +869,24 @@ def graficar_radar(metricas: dict, jugador: str):
     ax.set_yticklabels([])
     ax.yaxis.grid(True, color=(0, 0.333, 0.584, 0.18), linewidth=0.7)
     ax.xaxis.grid(True, color=(0, 0.333, 0.584, 0.25), linewidth=0.8)
-
-    # Etiquetas de categorías
     ax.set_xticks(angulos[:-1])
     ax.set_xticklabels(labels, color="#B3B2B3", fontsize=11,
                        fontfamily="sans-serif", fontweight="600")
-
-    # Área rellena
     ax.plot(angulos, valores, color="#005595", linewidth=2.2, linestyle="solid")
     ax.fill(angulos, valores, color="#005595", alpha=0.30)
-
-    # Puntos en cada vértice
     ax.scatter(angulos[:-1], valores[:-1], color="#3a8fd4", s=55, zorder=5)
-
-    # Valores sobre cada punto
     for ang, val, lbl in zip(angulos[:-1], valores[:-1], labels):
         ax.text(ang, val + 8, f"{val:.0f}", ha="center", va="center",
                 color="#FFFFFF", fontsize=9, fontweight="bold")
-
     ax.set_title(jugador, color="#FFFFFF", fontsize=13,
                  fontweight="900", pad=22, fontfamily="sans-serif")
-
     plt.tight_layout()
     return fig
-
-
+ 
+ 
 # =========================
 # MAIN
 # =========================
-
-# Pantalla de carga branded
 _loading_placeholder = st.empty()
 _loading_placeholder.markdown(f"""
 <div style='position:fixed; inset:0; z-index:99999; display:flex; flex-direction:column;
@@ -1031,31 +911,26 @@ _loading_placeholder.markdown(f"""
     </style>
 </div>
 """, unsafe_allow_html=True)
-
-# Cargar competiciones
+ 
 comps = cargar_competiciones()
-_loading_placeholder.empty()  # Oculta la pantalla de carga al terminar
-
-# Lista ligas disponibles
+_loading_placeholder.empty()
+ 
 ligas = comps['competition_name'].unique().tolist() if not comps.empty else ["(No disponible)"]
-
-# Cargar logos
+ 
 logo = Image.open("assets/TacticSense AI logo.png")
 logo_sidebar = Image.open("assets/TacticSense AI logo.png")
-
-# Centrar logo principal con filtro blanco en dark mode
+ 
 st.markdown('<div class="logo-area">', unsafe_allow_html=True)
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     st.image(logo, width=340)
 st.markdown('</div>', unsafe_allow_html=True)
-# Menú lateral
+ 
 with st.sidebar:
-    # Logo en sidebar
     st.markdown('<div class="sidebar-logo" style="padding:16px 12px 4px;">', unsafe_allow_html=True)
     st.image(logo_sidebar, width=200)
     st.markdown('</div>', unsafe_allow_html=True)
-
+ 
     selected = option_menu(
         menu_title=None,
         options=["Inicio", "Análisis Rival", "Análisis Propio", "Scout Report", "Mapa de Calor", "Pizarra", "Comparativa", "Simulador", "Subir CSV", "Chat Tactisense AI"],
@@ -1093,8 +968,7 @@ with st.sidebar:
             },
         }
     )
-
-    # Firma al pie del sidebar
+ 
     st.markdown(f"""
     <div style='position:fixed; bottom:0; left:0; width:238px; padding:14px 20px;
                 background:linear-gradient(0deg, {bg_color} 80%, transparent 100%);'>
@@ -1110,25 +984,23 @@ with st.sidebar:
         </div>
     </div>
     """, unsafe_allow_html=True)
-
+ 
 def render_selectores(need_rival=True, need_prop=True):
-    """Muestra selectores de liga/equipos solo en secciones que los necesitan."""
-    # Persistir selección de liga entre secciones
     liga_idx = 0
     if "liga_sel" in st.session_state and st.session_state["liga_sel"] in ligas:
         liga_idx = ligas.index(st.session_state["liga_sel"])
-
+ 
     ncols = 1 + int(need_rival) + int(need_prop)
     cols = st.columns(ncols)
-
+ 
     with cols[0]:
         liga_sel = st.selectbox("Selecciona una liga", ligas, index=liga_idx, key=f"liga_{selected}")
     st.session_state["liga_sel"] = liga_sel
-
+ 
     if not comps.empty and liga_sel != "(No disponible)":
         cond = comps['competition_name'] == liga_sel
         try:
-            comp_id  = comps[cond].iloc[0]['competition_id']
+            comp_id   = comps[cond].iloc[0]['competition_id']
             season_id = comps[cond].iloc[0]['season_id']
         except Exception:
             comp_id = season_id = None
@@ -1136,9 +1008,10 @@ def render_selectores(need_rival=True, need_prop=True):
         _matches = obtener_partidos(comp_id, season_id, source=source_sel) if comp_id and season_id else pd.DataFrame()
     else:
         _matches = pd.DataFrame()
-
+ 
     if not _matches.empty:
         _matches = _matches.copy()
+        # La API retorna strings directos, extract_name_from_maybe_dict cubre ambos casos
         _matches['home_team_name'] = _matches['home_team'].apply(extract_name_from_maybe_dict) if 'home_team' in _matches.columns else None
         _matches['away_team_name'] = _matches['away_team'].apply(extract_name_from_maybe_dict) if 'away_team' in _matches.columns else None
         _equipos = sorted(list(set(
@@ -1147,15 +1020,15 @@ def render_selectores(need_rival=True, need_prop=True):
         )))
     else:
         _equipos = []
-
+ 
     _rival = _prop = None
     col_idx = 1
-
+ 
     if need_rival:
         with cols[col_idx]:
             _rival = st.selectbox("Equipo Rival", _equipos if _equipos else ["(sin datos)"], key=f"rival_{selected}")
         col_idx += 1
-
+ 
     if need_prop:
         with cols[col_idx]:
             opciones = [e for e in _equipos if e != (_rival or "")]
@@ -1163,14 +1036,13 @@ def render_selectores(need_rival=True, need_prop=True):
             idx      = opciones.index(default) if default in opciones else 0
             _prop    = st.selectbox("Tu Equipo", opciones if opciones else ["(sin datos)"], index=idx, key=f"prop_{selected}")
         st.session_state["equipo_prop"] = _prop
-
+ 
     return _matches, _rival, _prop
-
+ 
 # =========================
 # SECCIONES DEL DASHBOARD
 # =========================
 if selected == "Inicio":
-    # ── HERO ──────────────────────────────────────────────────────────
     st.markdown(f"""
     <div class="hero-container">
         <h1 style='font-size:3.6rem; font-weight:900; line-height:1.08;
@@ -1189,12 +1061,11 @@ if selected == "Inicio":
             <span class="token">⚽ Liga MX</span>
             <span class="token">📊 BSD Data</span>
             <span class="token">🤖 IA Táctica LLM</span>
-            <span class="token">📡 Apertura 2025 · Clausura 2025</span>
+            <span class="token">📡 Apertura 2025 · Clausura 2026</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # ── KPI ROW ────────────────────────────────────────────────────────
+ 
     st.markdown("""
     <div style='display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:32px;'>
         <div class="metric-card">
@@ -1215,10 +1086,9 @@ if selected == "Inicio":
         </div>
     </div>
     """, unsafe_allow_html=True)
-
+ 
     st.markdown('<div class="glow-divider"></div>', unsafe_allow_html=True)
-
-    # ── FEATURE GRID ──────────────────────────────────────────────────
+ 
     st.markdown(f'<div class="section-badge">Funcionalidades</div>', unsafe_allow_html=True)
     st.markdown(f"""
     <div style='display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:36px;'>
@@ -1254,8 +1124,7 @@ if selected == "Inicio":
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # ── INVESTOR CALLOUT ──────────────────────────────────────────────
+ 
     st.markdown(f"""
     <div class="glow-divider"></div>
     <div class="investor-block">
@@ -1266,7 +1135,7 @@ if selected == "Inicio":
         </h3>
         <p style='color:{text_secondary}; font-size:0.93rem; line-height:1.82;
                   max-width:800px; font-family:Inter,sans-serif;'>
-            Tactisense AI está construida sobre datos de calidad profesional de Liga MX (Apertura y Clausura 2025)
+            Tactisense AI está construida sobre datos de calidad profesional de Liga MX (Apertura 2025 · Clausura 2026)
             provistos por BSD, e inteligencia artificial. Tactisense AI demuestra la viabilidad
             técnica de una plataforma <strong style="color:{text_primary};">SaaS escalable</strong> que puede servir
             desde academias juveniles hasta equipos de primer nivel, con un modelo de negocio B2B replicable
@@ -1281,7 +1150,7 @@ if selected == "Inicio":
         </div>
     </div>
     """, unsafe_allow_html=True)
-
+ 
 elif selected == "Análisis Rival":
     st.markdown(f'<div class="section-badge">Inteligencia Táctica</div>', unsafe_allow_html=True)
     matches, equipo_rival, _ = render_selectores(need_rival=True, need_prop=False)
@@ -1292,15 +1161,15 @@ elif selected == "Análisis Rival":
             st.warning("No se encontraron eventos reales para este equipo.")
         else:
             st.write(f"Eventos cargados: {df_r.shape[0]}")
-
-            # Visualización de formaciones (top 5) con estilo tarjeta
-            if 'tactics' in df_r.columns:
-                formaciones = df_r['tactics'].dropna().apply(lambda t: t.get('formation') if isinstance(t, dict) else None)
+ 
+            # Formaciones desde el campo 'formation' que retorna /shots
+            if 'formation' in df_r.columns:
+                shots_r = df_r[df_r['type_name'] == 'Shot']
+                formaciones = shots_r['formation'].dropna().value_counts().head(5)
                 if not formaciones.empty:
-                    top_formaciones = formaciones.value_counts().head(5)
                     st.markdown("### 🛡️ TACTICAL FORMATIONS")
-                    cols = st.columns(len(top_formaciones))
-                    for i, (formacion, count) in enumerate(top_formaciones.items()):
+                    cols = st.columns(len(formaciones))
+                    for i, (formacion, count) in enumerate(formaciones.items()):
                         with cols[i]:
                             st.markdown(f"""
                                 <div class="formation-badge">
@@ -1309,8 +1178,7 @@ elif selected == "Análisis Rival":
                                     <div class="subtitle">{count} MATCHES ANALYZED</div>
                                 </div>
                             """, unsafe_allow_html=True)
-
-            # Visualización top xG promedio por jugador -> TARJETAS EN MOSAICO
+ 
             shots = df_r[df_r['type_name'] == 'Shot']
             if not shots.empty and shots['xg'].notna().any():
                 xg_prom = shots.groupby('player')['xg'].mean().sort_values(ascending=False).head(12)
@@ -1335,7 +1203,7 @@ elif selected == "Análisis Rival":
                 st.info("No se detectaron tiros con xG para mostrar.")
     else:
         st.warning("No hay partidos cargados para la liga/equipo seleccionado.")
-
+ 
 elif selected == "Análisis Propio":
     st.markdown(f'<div class="section-badge">Tu Rendimiento</div>', unsafe_allow_html=True)
     matches, _, equipo_prop = render_selectores(need_rival=False, need_prop=True)
@@ -1354,7 +1222,7 @@ elif selected == "Análisis Propio":
             exportar_datos(df_p, nombre_archivo=f"{equipo_prop}_eventos.csv")
     else:
         st.warning("No hay datos disponibles para tu equipo. Comprueba selección de liga y equipo.")
-
+ 
 elif selected == "Mapa de Calor":
     st.markdown(f'<div class="section-badge">Análisis Espacial</div>', unsafe_allow_html=True)
     st.header("Mapa de Calor de Tiros")
@@ -1365,10 +1233,10 @@ elif selected == "Mapa de Calor":
             st.warning("No se encontraron eventos para generar mapa de calor.")
         else:
             shots = df_p[df_p['type_name'] == 'Shot']
-            if 'location' in shots.columns and shots['location'].notna().any():
-                locs = shots['location'].dropna().tolist()
-                x = [p[0] for p in locs if isinstance(p, (list,tuple)) and len(p)==2]
-                y = [p[1] for p in locs if isinstance(p, (list,tuple)) and len(p)==2]
+            # CAMBIO: la API retorna x e y como columnas directas, no como lista location
+            if 'x' in shots.columns and 'y' in shots.columns and shots['x'].notna().any():
+                x = shots['x'].dropna().tolist()
+                y = shots['y'].dropna().tolist()
                 pitch = Pitch(pitch_type='statsbomb', pitch_color=bg_color, line_color=text_secondary)
                 fig, ax = pitch.draw(figsize=(6,4))
                 if x and y:
@@ -1389,39 +1257,34 @@ elif selected == "Mapa de Calor":
                 st.info("No hay tiros con coordenadas de localización.")
     else:
         st.warning("Selecciona liga/equipo válido.")
-
+ 
 elif selected == "Pizarra":
     st.markdown(f'<div class="section-badge">Diseño Táctico</div>', unsafe_allow_html=True)
     st.header("Pizarra Táctica Interactiva")
-
-    # Selección fondo
+ 
     fondo = st.selectbox("Selecciona el fondo de la pizarra:", ["Pizarra táctica (negro)", "Pizarra de campo (verde)"])
-
-    # Parámetros del trazo
+ 
     st.markdown("### Configuración del trazo")
     stroke_color = st.color_picker("Color del trazo", "#FF0000")
     stroke_width = st.slider("Grosor del trazo", 1, 10, 3)
     drawing_mode = st.selectbox("Modo de dibujo", ["freedraw", "line", "rect", "circle", "transform"])
-
-    # Definir fondo según selección
+ 
     if fondo == "Pizarra táctica (negro)":
-        bg_color = "black"
+        pitch_bg = "black"
     else:
-        bg_color = "#007A33"  # verde cancha
-
-    # Tamaño fijo para canvas
+        pitch_bg = "#007A33"
+ 
     canvas_result = st_canvas(
-        fill_color="rgba(0,0,0,0)",  # transparente para dibujo libre
+        fill_color="rgba(0,0,0,0)",
         stroke_width=stroke_width,
         stroke_color=stroke_color,
-        background_color=bg_color,
+        background_color=pitch_bg,
         height=600,
         width=900,
         drawing_mode=drawing_mode,
         key="canvas_pizarra",
     )
-
-    # Botón para descargar imagen dibujada
+ 
     if canvas_result.image_data is not None:
         img_bytes = BytesIO()
         plt.imsave(img_bytes, canvas_result.image_data.astype('uint8'))
@@ -1432,9 +1295,9 @@ elif selected == "Pizarra":
             file_name="pizarra.png",
             mime="image/png"
         )
-
+ 
     st.caption("Tip: Usa 'transform' para arrastrar fichas. Cambia a 'line' o 'freedraw' para rutas de desmarque o flechas.")
-
+ 
 elif selected == "Comparativa":
     st.markdown(f'<div class="section-badge">Head to Head</div>', unsafe_allow_html=True)
     st.header("Comparativa de Equipos")
@@ -1445,45 +1308,46 @@ elif selected == "Comparativa":
         def count_event_type(df, tipo):
             if df.empty: return 0
             return df[df['type_name'] == tipo].shape[0]
-
+ 
         tiros_p = count_event_type(df_p, 'Shot')
         tiros_r = count_event_type(df_r, 'Shot')
-        tarjetas_p = count_event_type(df_p, 'Card')
-        tarjetas_r = count_event_type(df_r, 'Card')
-
-        color_prop = accent_blue
+        # CAMBIO: tarjetas no existen en /shots ni /player-stats como type_name,
+        # se leen desde los campos yellow_card y red_card de player-stats
+        tarjetas_p = df_p['yellow_card'].sum() if 'yellow_card' in df_p.columns else 0
+        tarjetas_r = df_r['yellow_card'].sum() if 'yellow_card' in df_r.columns else 0
+ 
+        color_prop  = accent_blue
         color_rival = brand_blue
-
+ 
         st.markdown(f"""
         <div style='display:flex; gap:2rem;'>
             <div style='flex:1; background:{surface_card}; padding:25px; border-radius:15px; color:{text_primary}; box-shadow: {card_shadow}; border-top: 4px solid {color_prop};'>
                 <h3 style='text-align:center; padding-bottom: 6px;'>{equipo_prop}</h3>
                 <p style='font-size:24px; margin:15px 0; font-family:Space Grotesk;'><strong style='color:{color_prop};'>{tiros_p}</strong> <span style='font-size:16px; color:{text_secondary};'>Tiros</span></p>
-                <p style='font-size:24px; margin:15px 0; font-family:Space Grotesk;'><strong style='color:{color_prop};'>{tarjetas_p}</strong> <span style='font-size:16px; color:{text_secondary};'>Tarjetas</span></p>
+                <p style='font-size:24px; margin:15px 0; font-family:Space Grotesk;'><strong style='color:{color_prop};'>{tarjetas_p}</strong> <span style='font-size:16px; color:{text_secondary};'>Tarjetas amarillas</span></p>
             </div>
             <div style='flex:1; background:{surface_card}; padding:25px; border-radius:15px; color:{text_primary}; box-shadow: {card_shadow}; border-top: 4px solid {color_rival};'>
                 <h3 style='text-align:center; padding-bottom: 6px;'>{equipo_rival}</h3>
                 <p style='font-size:24px; margin:15px 0; font-family:Space Grotesk;'><strong style='color:{color_rival};'>{tiros_r}</strong> <span style='font-size:16px; color:{text_secondary};'>Tiros</span></p>
-                <p style='font-size:24px; margin:15px 0; font-family:Space Grotesk;'><strong style='color:{color_rival};'>{tarjetas_r}</strong> <span style='font-size:16px; color:{text_secondary};'>Tarjetas</span></p>
+                <p style='font-size:24px; margin:15px 0; font-family:Space Grotesk;'><strong style='color:{color_rival};'>{tarjetas_r}</strong> <span style='font-size:16px; color:{text_secondary};'>Tarjetas amarillas</span></p>
             </div>
         </div>
         """, unsafe_allow_html=True)
+ 
+        st.subheader("Recomendador táctico (reglas básicas)")
+        colf, cold = st.columns(2)
+        with colf:
+            fortalezas = st.multiselect("Fortalezas propias", ["Bandas fuertes","Centros precisos","Juego interior","Mediapunta creativo","Presión alta"])
+        with cold:
+            debilidades = st.multiselect("Debilidades del rival", ["Laterales débiles","Juego aéreo débil","Mediocentro débil","Entre líneas","Espalda de la defensa","Sufre transiciones"])
+ 
+        if st.button("Sugerir formaciones"):
+            recs = sugerir_formacion(fortalezas, debilidades)
+            for f, motivo in recs:
+                st.markdown(f"- **{f}** — {motivo}")
     else:
         st.warning("Selecciona liga y equipos válidos para comparar.")
-# Recomendaciones básicas (reglas)
-    st.subheader("Recomendador táctico (reglas básicas)")
-    colf, cold = st.columns(2)
-    with colf:
-        fortalezas = st.multiselect("Fortalezas propias", ["Bandas fuertes","Centros precisos","Juego interior","Mediapunta creativo","Presión alta"])
-    with cold:
-        debilidades = st.multiselect("Debilidades del rival", ["Laterales débiles","Juego aéreo débil","Mediocentro débil","Entre líneas","Espalda de la defensa","Sufre transiciones"])
-
-    if st.button("Sugerir formaciones"):
-        recs = sugerir_formacion(fortalezas, debilidades)
-        for f, motivo in recs:
-            st.markdown(f"- **{f}** — {motivo}")
-
-
+ 
 elif selected == "Simulador":
     st.markdown(f'<div class="section-badge">Simulation Engine v1.0</div>', unsafe_allow_html=True)
     st.header("Simulador de Probabilidad")
@@ -1494,16 +1358,14 @@ elif selected == "Simulador":
     xg_r = df_r['xg'].sum() if not df_r.empty and 'xg' in df_r.columns else 0
     total = xg_p + xg_r
     prob = round(100 * xg_p / total, 1) if total > 0 else 50
-
-    # Definir color según probabilidad
+ 
     if prob < 35:
-        color = "#e63946"  # rojo
+        color = "#e63946"
     elif prob <= 65:
-        color = "#f4a261"  # amarillo
+        color = "#f4a261"
     else:
-        color = "#2a9d8f"  # verde
-
-    # Elite Simulation: Asymmetry & Scale
+        color = "#2a9d8f"
+ 
     st.markdown(f"""
         <div style="margin-top:60px; border-left: 2px solid {brand_blue}; padding-left: 40px;">
             <div class="hero-label">Tactisense Simulation Engine v.1.0</div>
@@ -1520,46 +1382,47 @@ elif selected == "Simulador":
             </div>
         </div>
     """, unsafe_allow_html=True)
-
+ 
 elif selected == "Scout Report":
     st.markdown(f'<div class="section-badge">Análisis Individual</div>', unsafe_allow_html=True)
     st.header("Scout Report — Radar de Jugador")
     matches, _, equipo_prop = render_selectores(need_rival=False, need_prop=True)
     if not matches.empty and equipo_prop and equipo_prop != "(sin datos)":
         df_scout = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4)
-
+ 
         if df_scout.empty:
             st.warning("No se encontraron eventos para generar el Scout Report.")
         else:
+            # CAMBIO: player en /shots es nombre (string), en /player-stats es null para bsd.
+            # Usamos los que tienen nombre real (vienen de shots)
             jugadores_disp = sorted(df_scout['player'].dropna().unique().tolist())
-
+ 
             col_sel, col_info = st.columns([1, 2])
             with col_sel:
                 jugador_sel = st.selectbox("Selecciona un jugador", jugadores_disp)
-
+ 
             if jugador_sel:
                 metricas = calcular_metricas_jugador(df_scout, jugador_sel)
-
+ 
                 col_radar, col_stats = st.columns([1, 1])
-
+ 
                 with col_radar:
                     fig = graficar_radar(metricas, jugador_sel)
                     st.pyplot(fig)
                     plt.close(fig)
-
+ 
                 with col_stats:
                     st.markdown(f"""
                     <div style='padding:8px 0 20px;'>
                         <div class='section-badge'>Métricas del jugador</div>
                     </div>
                     """, unsafe_allow_html=True)
-
+ 
                     for metrica, valor in metricas.items():
                         color_bar = "#005595" if valor >= 60 else "#003B65" if valor >= 35 else "#1a2a3a"
                         st.markdown(f"""
                         <div style='margin-bottom:14px;'>
-                            <div style='display:flex; justify-content:space-between;
-                                        margin-bottom:5px;'>
+                            <div style='display:flex; justify-content:space-between; margin-bottom:5px;'>
                                 <span style='font-family:Space Grotesk,sans-serif; font-size:12px;
                                              font-weight:600; color:#B3B2B3; letter-spacing:0.08em;
                                              text-transform:uppercase;'>{metrica}</span>
@@ -1574,12 +1437,11 @@ elif selected == "Scout Report":
                             </div>
                         </div>
                         """, unsafe_allow_html=True)
-
-                    # Percentil global
+ 
                     percentil_global = round(sum(metricas.values()) / len(metricas), 1)
                     nivel = "Élite" if percentil_global >= 70 else "Alto" if percentil_global >= 45 else "Desarrollo"
                     color_nivel = "#2a9d8f" if percentil_global >= 70 else "#005595" if percentil_global >= 45 else "#B3B2B3"
-
+ 
                     st.markdown(f"""
                     <div class='module' style='margin-top:20px; text-align:center;'>
                         <div style='font-family:Space Grotesk,sans-serif; font-size:10px;
@@ -1595,7 +1457,7 @@ elif selected == "Scout Report":
                     """, unsafe_allow_html=True)
     else:
         st.warning("Selecciona una liga y tu equipo para generar el Scout Report.")
-
+ 
 elif selected == "Subir CSV":
     st.markdown(f'<div class="section-badge">Datos Propios</div>', unsafe_allow_html=True)
     st.header("Cargar CSV Propio")
@@ -1604,36 +1466,31 @@ elif selected == "Subir CSV":
         df_csv = pd.read_csv(archivo)
         st.dataframe(df_csv.head())
         exportar_datos(df_csv, nombre_archivo="datos_subidos.csv")
-
+ 
 elif selected == "Chat Tactisense AI":
     st.markdown(f'<div class="section-badge">IA Especializada · LLaMA 3.3-70B</div>', unsafe_allow_html=True)
     st.header("DT — Tu Asistente Táctico")
-    
+ 
     import os
     from groq import Groq, AuthenticationError, BadRequestError, APIConnectionError, RateLimitError
-
-    # Inicializa historial para Groq (incluye un mensaje system persistente)
+ 
     if "messages_groq" not in st.session_state:
         st.session_state.messages_groq = [
             {"role": "system", "content": "Eres un asistente experto en táctica de fútbol llamado DT y formas parte de la plataforma Tactisense AI. Tu misión es ayudar a entrenadores y analistas a tomar decisiones tácticas dentro de Tactisense AI. Siempre responde con claridad y utiliza breves bullets cuando convenga. Solo proporciona información relacionada con tácticas, alineaciones, análisis de rivales, estrategias de juego o rendimiento de jugadores.Información sobre Tactisense AI:Es una herramienta tecnológica enfocada en el análisis táctico de fútbol mediante datos y estadísticas. Su enfoque principal es ayudar a entrenadores y analistas a tomar decisiones estratégicas basadas en datos históricos y patrones de juego. Está en una etapa temprana de desarrollo, con funcionalidades como análisis de rivales, sugerencias tácticas y visualización de alineaciones, pero representa la visión de un sistema completo que escalará para ofrecer predicciones y recomendaciones avanzadas.Como negocio, Tactisense AI apunta a ser escalable ofreciendo servicios a equipos profesionales y formativos, y expandiendo funcionalidades con IA avanzada en el futuro.Instrucciones para tus respuestas:Si te preguntan sobre Tactisense AI o tu rol, explica que eres una inteligencia artificial de Tactisense AI diseñada para apoyar en decisiones tácticas de fútbol.Si te preguntan sobre temas no relacionados con fútbol, responde de manera cortés indicando que solo puedes ayudar en tácticas de fútbol.Responde en el idioma en el que se te haga la pregunta, adaptando tus bullets y explicaciones a ese idioma."}
         ]
-
-    # Renderiza historial en formato chat (sin mostrar el system)
+ 
     for m in st.session_state.messages_groq:
         if m["role"] in ("user", "assistant"):
             with st.chat_message("user" if m["role"] == "user" else "assistant"):
                 st.markdown(m["content"])
-
-    # Entrada tipo chat (estilo ChatGPT)
+ 
     prompt = st.chat_input("Escribe tu pregunta táctica (p. ej., ¿Cómo defender un 4-3-3?)")
-
+ 
     if prompt:
-        # Muestra el mensaje del usuario en el chat e insértalo al historial
         with st.chat_message("user"):
             st.markdown(prompt)
         st.session_state.messages_groq.append({"role": "user", "content": prompt})
-
-        # Cliente Groq
+ 
         api_key = os.getenv("GROQ_API_KEY") or getattr(st.secrets, "GROQ_API_KEY", None)
         if not api_key:
             with st.chat_message("assistant"):
@@ -1641,33 +1498,26 @@ elif selected == "Chat Tactisense AI":
         else:
             client = Groq(api_key=api_key)
             try:
-                # 👇 Modelo correcto y estable
                 resp = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=st.session_state.messages_groq,
                     temperature=0.2,
                 )
                 answer = resp.choices[0].message.content
-
-                # Muestra respuesta y guarda en historial
                 with st.chat_message("assistant"):
                     st.markdown(answer)
                 st.session_state.messages_groq.append({"role": "assistant", "content": answer})
-
+ 
             except (AuthenticationError, RateLimitError, APIConnectionError, BadRequestError) as e:
                 with st.chat_message("assistant"):
                     st.error(f"Error de Groq: {e}")
             except Exception as e:
                 with st.chat_message("assistant"):
                     st.error(f"Error inesperado: {e}")
-
-
-
-
-from PIL import Image
-import streamlit as st
-
-# Footer
+ 
+# =========================
+# FOOTER
+# =========================
 st.markdown(f"""
 <div style='margin-top:60px; padding:28px 0 16px; border-top:1px solid {ghost_border};
             display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;'>
@@ -1679,14 +1529,10 @@ st.markdown(f"""
     </div>
     <div style='display:flex; align-items:center; gap:12px;'>
         <span style='color:{text_secondary}; font-size:0.75rem; font-family:Space Grotesk,sans-serif;
-                     letter-spacing:0.08em; text-transform:uppercase;'>Powered by</span>
-""", unsafe_allow_html=True)
-
-st.markdown(f"""
-<div style='...'>  <!-- tu div de footer actual -->
-    <span style='color:{text_secondary}; font-size:0.75rem; font-family:Space Grotesk,sans-serif;
-                 letter-spacing:0.08em; text-transform:uppercase;'>
-        Powered by BSD · TacticSense API
-    </span>
+                     letter-spacing:0.08em; text-transform:uppercase;'>
+            Powered by BSD · TacticSense API
+        </span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
+ 
