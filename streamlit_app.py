@@ -466,18 +466,50 @@ def safe_team_name(x):
 # CONFIG DE LA API PROPIA
 # =========================
 API_BASE = "https://t7scohixsj.execute-api.us-east-1.amazonaws.com"
+
+_loader_video_b64 = __import__('base64').b64encode(open('assets/loading_ball.mp4', 'rb').read()).decode()
+
+def show_ball_loader(message="Cargando..."):
+    placeholder = st.empty()
+    placeholder.markdown(f"""
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;
+                padding:30px 0;">
+        <video autoplay loop muted playsinline
+               style="width:180px; height:180px; object-fit:cover; border-radius:16px;"
+               >
+            <source src="data:video/mp4;base64,{_loader_video_b64}#t=5" type="video/mp4">
+        </video>
+        <span style="font-family:'Space Grotesk',sans-serif; font-size:11px; letter-spacing:0.2em;
+                     text-transform:uppercase; color:#B3B2B3; margin-top:14px;">{message}</span>
+    </div>
+    <script>
+        (function() {{
+            var videos = document.querySelectorAll('video');
+            videos.forEach(function(v) {{
+                v.currentTime = 5;
+                v.play();
+            }});
+        }})();
+    </script>
+    """, unsafe_allow_html=True)
+    return placeholder
  
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, show_spinner=False)
 def cargar_competiciones():
     try:
-        with st.spinner("Cargando datos de TacticSense API..."):
-            r = requests.get(f"{API_BASE}/manifest", timeout=10)
-            r.raise_for_status()
+        r = requests.get(f"{API_BASE}/manifest", timeout=10)
+        r.raise_for_status()
         manifest = r.json()
+        NOMBRES_LIGA = {
+            ("bsd", "league_19", "296"): "Liga MX · Apertura 2025",
+            ("bsd", "league_20", "297"): "Liga MX · Clausura 2026",
+        }
         rows = []
         for e in manifest.get("entries", []):
+            key = (e["source"], e["league"], str(e["season"]))
+            nombre = NOMBRES_LIGA.get(key, f"{e['source'].upper()} · {e['league']} · S{e['season']}")
             rows.append({
-                "competition_name": f"{e['source'].upper()} · {e['league']} · S{e['season']}",
+                "competition_name": nombre,
                 "competition_id":   e["league"],
                 "season_id":        e["season"],
                 "source":           e["source"],
@@ -488,13 +520,12 @@ def cargar_competiciones():
         st.error(f"Error al conectar con TacticSense API: {ex}")
         return pd.DataFrame()
  
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=3600, show_spinner=False)
 def obtener_partidos(comp_id, season_id, source="bsd"):
     try:
         params = f"source={source}&league={comp_id}&season={season_id}"
-        with st.spinner("Descargando partidos..."):
-            r = requests.get(f"{API_BASE}/matches?{params}", timeout=15)
-            r.raise_for_status()
+        r = requests.get(f"{API_BASE}/matches?{params}", timeout=15)
+        r.raise_for_status()
         data = r.json()
         df = pd.DataFrame(data)
         # La API retorna home_team y away_team como strings directos
@@ -513,8 +544,8 @@ def obtener_partidos(comp_id, season_id, source="bsd"):
         st.warning(f"No se pudieron descargar partidos: {ex}")
         return pd.DataFrame()
  
-@st.cache_data(ttl=3600)
-def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, source="bsd", league="league_19", season="296"):
+@st.cache_data(ttl=3600, show_spinner=False)
+def _obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, source="bsd", league="league_19", season="296"):
     if matches_df is None or matches_df.empty:
         return pd.DataFrame()
  
@@ -591,7 +622,14 @@ def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, 
             "tackles":   p.get("tackles_total"),
         })
     return pd.DataFrame(rows)
- 
+
+
+def obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos=3, source="bsd", league="league_19", season="296"):
+    _loader = show_ball_loader("Analizando eventos...")
+    result = _obtener_datos_eventos_por_nombre(equipo_nombre, matches_df, max_partidos, source, league, season)
+    _loader.empty()
+    return result
+
 # =========================
 # ANÁLISIS TÁCTICO SIMPLE
 # =========================
@@ -807,41 +845,33 @@ def build_initial_board(width, height, formation_name, color="#1976D2", opponent
 # =========================
 # SCOUT REPORT — RADAR
 # =========================
-def calcular_metricas_jugador(df, jugador):
-    metricas = {
-        "xG":      0.0,
-        "Tiros":   0.0,
-        "Pases":   0.0,
-        "Presión": 0.0,
-        "Duelos":  0.0,
-        "Regates": 0.0,
+def _calcular_stats_tiros(df_jugador):
+    shots = df_jugador[df_jugador['type_name'] == 'Shot']
+    n = len(shots)
+    xg = shots['xg'].sum() if 'xg' in shots.columns and shots['xg'].notna().any() else 0.0
+    goles = shots['result'].str.contains('goal', case=False, na=False).sum() if 'result' in shots.columns else 0
+    a_puerta = shots['result'].str.contains('goal|save', case=False, na=False).sum() if 'result' in shots.columns else 0
+    return {
+        "xG":        xg,
+        "Tiros":     n,
+        "Goles":     goles,
+        "A Puerta":  a_puerta,
+        "Precisión": (a_puerta / n * 100) if n > 0 else 0.0,
+        "xG/Tiro":   (xg / n) if n > 0 else 0.0,
     }
+
+
+def calcular_metricas_jugador(df, jugador):
     df_j = df[df['player'] == jugador]
     if df_j.empty:
-        return metricas
- 
-    if 'type_name' in df.columns:
-        metricas["Tiros"]   = (df_j['type_name'] == 'Shot').sum()
-        metricas["Pases"]   = (df_j['type_name'] == 'Pass').sum()
-        metricas["Presión"] = (df_j['type_name'] == 'Pressure').sum()
-        metricas["Duelos"]  = (df_j['type_name'] == 'Duel').sum()
-        metricas["Regates"] = (df_j['type_name'].isin(['Dribble', 'Carry'])).sum()
- 
-    if 'xg' in df_j.columns:
-        metricas["xG"] = df_j['xg'].sum() if df_j['xg'].notna().any() else 0.0
- 
+        return {"xG": 0.0, "Tiros": 0.0, "Goles": 0.0, "A Puerta": 0.0, "Precisión": 0.0, "xG/Tiro": 0.0}
+
+    metricas = _calcular_stats_tiros(df_j)
+
     todos = {}
     for jugador_i in df['player'].dropna().unique():
-        df_i = df[df['player'] == jugador_i]
-        todos[jugador_i] = {
-            "xG":      df_i['xg'].sum() if 'xg' in df_i.columns and df_i['xg'].notna().any() else 0,
-            "Tiros":   (df_i['type_name'] == 'Shot').sum()     if 'type_name' in df_i.columns else 0,
-            "Pases":   (df_i['type_name'] == 'Pass').sum()     if 'type_name' in df_i.columns else 0,
-            "Presión": (df_i['type_name'] == 'Pressure').sum() if 'type_name' in df_i.columns else 0,
-            "Duelos":  (df_i['type_name'] == 'Duel').sum()     if 'type_name' in df_i.columns else 0,
-            "Regates": (df_i['type_name'].isin(['Dribble','Carry'])).sum() if 'type_name' in df_i.columns else 0,
-        }
- 
+        todos[jugador_i] = _calcular_stats_tiros(df[df['player'] == jugador_i])
+
     normalizadas = {}
     for k, v in metricas.items():
         maximo = max((todos[j][k] for j in todos), default=1)
@@ -871,12 +901,15 @@ def graficar_radar(metricas: dict, jugador: str):
     ax.xaxis.grid(True, color=(0, 0.333, 0.584, 0.25), linewidth=0.8)
     ax.set_xticks(angulos[:-1])
     ax.set_xticklabels(labels, color="#B3B2B3", fontsize=11,
-                       fontfamily="sans-serif", fontweight="600")
+                       fontfamily="sans-serif", fontweight="600",
+                       position=(0, 0.05))
+    ax.tick_params(axis='x', pad=18)
     ax.plot(angulos, valores, color="#005595", linewidth=2.2, linestyle="solid")
     ax.fill(angulos, valores, color="#005595", alpha=0.30)
     ax.scatter(angulos[:-1], valores[:-1], color="#3a8fd4", s=55, zorder=5)
     for ang, val, lbl in zip(angulos[:-1], valores[:-1], labels):
-        ax.text(ang, val + 8, f"{val:.0f}", ha="center", va="center",
+        offset = -12 if val > 70 else 10
+        ax.text(ang, val + offset, f"{val:.0f}", ha="center", va="center",
                 color="#FFFFFF", fontsize=9, fontweight="bold")
     ax.set_title(jugador, color="#FFFFFF", fontsize=13,
                  fontweight="900", pad=22, fontfamily="sans-serif")
@@ -915,7 +948,9 @@ _loading_placeholder.markdown(f"""
 comps = cargar_competiciones()
 _loading_placeholder.empty()
  
-ligas = comps['competition_name'].unique().tolist() if not comps.empty else ["(No disponible)"]
+ligas = [l for l in comps['competition_name'].unique().tolist() if not l.startswith("UNDERSTAT")] if not comps.empty else ["(No disponible)"]
+if not ligas:
+    ligas = ["(No disponible)"]
  
 logo = Image.open("assets/TacticSense AI logo.png")
 logo_sidebar = Image.open("assets/TacticSense AI logo.png")
@@ -989,14 +1024,16 @@ def render_selectores(need_rival=True, need_prop=True):
     liga_idx = 0
     if "liga_sel" in st.session_state and st.session_state["liga_sel"] in ligas:
         liga_idx = ligas.index(st.session_state["liga_sel"])
- 
+
     ncols = 1 + int(need_rival) + int(need_prop)
     cols = st.columns(ncols)
- 
+
     with cols[0]:
         liga_sel = st.selectbox("Selecciona una liga", ligas, index=liga_idx, key=f"liga_{selected}")
     st.session_state["liga_sel"] = liga_sel
  
+    comp_id = season_id = None
+    source_sel = "bsd"
     if not comps.empty and liga_sel != "(No disponible)":
         cond = comps['competition_name'] == liga_sel
         try:
@@ -1005,7 +1042,12 @@ def render_selectores(need_rival=True, need_prop=True):
         except Exception:
             comp_id = season_id = None
         source_sel = comps[cond].iloc[0]["source"] if "source" in comps.columns else "bsd"
-        _matches = obtener_partidos(comp_id, season_id, source=source_sel) if comp_id and season_id else pd.DataFrame()
+        if comp_id and season_id:
+            _loader = show_ball_loader("Descargando partidos...")
+            _matches = obtener_partidos(comp_id, season_id, source=source_sel)
+            _loader.empty()
+        else:
+            _matches = pd.DataFrame()
     else:
         _matches = pd.DataFrame()
  
@@ -1037,7 +1079,7 @@ def render_selectores(need_rival=True, need_prop=True):
             _prop    = st.selectbox("Tu Equipo", opciones if opciones else ["(sin datos)"], index=idx, key=f"prop_{selected}")
         st.session_state["equipo_prop"] = _prop
  
-    return _matches, _rival, _prop
+    return _matches, _rival, _prop, source_sel, comp_id, season_id
  
 # =========================
 # SECCIONES DEL DASHBOARD
@@ -1153,10 +1195,10 @@ if selected == "Inicio":
  
 elif selected == "Análisis Rival":
     st.markdown(f'<div class="section-badge">Inteligencia Táctica</div>', unsafe_allow_html=True)
-    matches, equipo_rival, _ = render_selectores(need_rival=True, need_prop=False)
+    matches, equipo_rival, _, src, lg, ssn = render_selectores(need_rival=True, need_prop=False)
     st.header(f"Análisis Rival: {equipo_rival}")
     if not matches.empty and equipo_rival and equipo_rival != "(sin datos)":
-        df_r = obtener_datos_eventos_por_nombre(equipo_rival, matches, max_partidos=4)
+        df_r = obtener_datos_eventos_por_nombre(equipo_rival, matches, max_partidos=4, source=src, league=lg, season=ssn)
         if df_r.empty:
             st.warning("No se encontraron eventos reales para este equipo.")
         else:
@@ -1206,10 +1248,10 @@ elif selected == "Análisis Rival":
  
 elif selected == "Análisis Propio":
     st.markdown(f'<div class="section-badge">Tu Rendimiento</div>', unsafe_allow_html=True)
-    matches, _, equipo_prop = render_selectores(need_rival=False, need_prop=True)
+    matches, _, equipo_prop, src, lg, ssn = render_selectores(need_rival=False, need_prop=True)
     st.header(f"Tu equipo: {equipo_prop}")
     if not matches.empty and equipo_prop and equipo_prop != "(sin datos)":
-        df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4)
+        df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4, source=src, league=lg, season=ssn)
         if df_p.empty:
             st.warning("No se encontraron eventos reales para tu equipo.")
         else:
@@ -1226,9 +1268,9 @@ elif selected == "Análisis Propio":
 elif selected == "Mapa de Calor":
     st.markdown(f'<div class="section-badge">Análisis Espacial</div>', unsafe_allow_html=True)
     st.header("Mapa de Calor de Tiros")
-    matches, _, equipo_prop = render_selectores(need_rival=False, need_prop=True)
+    matches, _, equipo_prop, src, lg, ssn = render_selectores(need_rival=False, need_prop=True)
     if not matches.empty and equipo_prop and equipo_prop != "(sin datos)":
-        df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=6)
+        df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=6, source=src, league=lg, season=ssn)
         if df_p.empty:
             st.warning("No se encontraron eventos para generar mapa de calor.")
         else:
@@ -1301,10 +1343,10 @@ elif selected == "Pizarra":
 elif selected == "Comparativa":
     st.markdown(f'<div class="section-badge">Head to Head</div>', unsafe_allow_html=True)
     st.header("Comparativa de Equipos")
-    matches, equipo_rival, equipo_prop = render_selectores(need_rival=True, need_prop=True)
+    matches, equipo_rival, equipo_prop, src, lg, ssn = render_selectores(need_rival=True, need_prop=True)
     if not matches.empty and equipo_prop and equipo_rival and equipo_prop != "(sin datos)" and equipo_rival != "(sin datos)":
-        df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4)
-        df_r = obtener_datos_eventos_por_nombre(equipo_rival, matches, max_partidos=4)
+        df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4, source=src, league=lg, season=ssn)
+        df_r = obtener_datos_eventos_por_nombre(equipo_rival, matches, max_partidos=4, source=src, league=lg, season=ssn)
         def count_event_type(df, tipo):
             if df.empty: return 0
             return df[df['type_name'] == tipo].shape[0]
@@ -1351,9 +1393,9 @@ elif selected == "Comparativa":
 elif selected == "Simulador":
     st.markdown(f'<div class="section-badge">Simulation Engine v1.0</div>', unsafe_allow_html=True)
     st.header("Simulador de Probabilidad")
-    matches, equipo_rival, equipo_prop = render_selectores(need_rival=True, need_prop=True)
-    df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4) if not matches.empty else pd.DataFrame()
-    df_r = obtener_datos_eventos_por_nombre(equipo_rival, matches, max_partidos=4) if not matches.empty else pd.DataFrame()
+    matches, equipo_rival, equipo_prop, src, lg, ssn = render_selectores(need_rival=True, need_prop=True)
+    df_p = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4, source=src, league=lg, season=ssn) if not matches.empty else pd.DataFrame()
+    df_r = obtener_datos_eventos_por_nombre(equipo_rival, matches, max_partidos=4, source=src, league=lg, season=ssn) if not matches.empty else pd.DataFrame()
     xg_p = df_p['xg'].sum() if not df_p.empty and 'xg' in df_p.columns else 0
     xg_r = df_r['xg'].sum() if not df_r.empty and 'xg' in df_r.columns else 0
     total = xg_p + xg_r
@@ -1386,16 +1428,16 @@ elif selected == "Simulador":
 elif selected == "Scout Report":
     st.markdown(f'<div class="section-badge">Análisis Individual</div>', unsafe_allow_html=True)
     st.header("Scout Report — Radar de Jugador")
-    matches, _, equipo_prop = render_selectores(need_rival=False, need_prop=True)
+    matches, _, equipo_prop, src, lg, ssn = render_selectores(need_rival=False, need_prop=True)
     if not matches.empty and equipo_prop and equipo_prop != "(sin datos)":
-        df_scout = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=4)
+        df_scout = obtener_datos_eventos_por_nombre(equipo_prop, matches, max_partidos=10, source=src, league=lg, season=ssn)
  
         if df_scout.empty:
             st.warning("No se encontraron eventos para generar el Scout Report.")
         else:
             # CAMBIO: player en /shots es nombre (string), en /player-stats es null para bsd.
             # Usamos los que tienen nombre real (vienen de shots)
-            jugadores_disp = sorted(df_scout['player'].dropna().unique().tolist())
+            jugadores_disp = sorted([j for j in df_scout['player'].dropna().unique().tolist() if not str(j).isdigit()])
  
             col_sel, col_info = st.columns([1, 2])
             with col_sel:
